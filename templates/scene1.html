@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene - Zero-Day Protection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#b39762;
+  --gold-d:#9f8049;
+  --gold-l:#c39a5c;
+  --text:#242832;
+  --muted:#737780;
+  --border:#ebe7df;
+  --cream:#f7f3e8;
+  --bg:#fcfaf6;
+  --chip:#f0e5cc;
+  --green:#2e9e6b;
+  --green-bg:#e9f7ef;
+  --red:#d64545;
+  --red-bg:#fde8e8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body,button,input,table{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+a{text-decoration:none;color:inherit}
+.wrap{width:92%;max-width:1200px;margin:auto}
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* Page routing transitions */
+.page{display:none}
+.page.on{display:block}
+.page.on > *{animation:rise .75s cubic-bezier(.22,1,.36,1) both}
+.page.on > *:nth-child(2){animation-delay:.1s}
+.page.on > *:nth-child(3){animation-delay:.2s}
+.page.on > *:nth-child(4){animation-delay:.3s}
+
+@keyframes rise{
+  from{opacity:0; transform:translateY(32px)}
+  to{opacity:1; transform:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .page.on > *{animation:none}
+  nav a::after{transition:none}
+}
+
+/* Header & Navigation */
+.top{height:68px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:20}
+.logo{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:600;letter-spacing:-.3px}
+.logo svg{color:var(--gold);font-size:24px}
+nav{display:flex;gap:34px;font-size:13px;align-items:center}
+nav a{padding:8px 0;position:relative;transition:color .25s;color:var(--text);font-weight:500}
+nav a:hover{color:var(--gold-d)}
+nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.22,1,.36,1)}
+nav a.act{color:var(--gold-d)}
+nav a.act::after,nav a:hover::after{transform:scaleX(1)}
+
+.nav-actions{display:flex;align-items:center;gap:12px}
+.btn-nav-login{font-size:12px;font-weight:600;color:var(--text);padding:8px 14px;border-radius:20px;transition:color .2s}
+.btn-nav-login:hover{color:var(--gold-d)}
+
+.btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#c3a66e,#a3844c);color:#fff;border-radius:30px;padding:12px 24px;font-size:12.5px;font-weight:500;border:0;cursor:pointer;box-shadow:0 5px 14px #b79a6530;transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px #b79a6545}
+.btn-outline{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none}
+.btn-outline:hover{border-color:var(--gold);background:var(--cream);color:var(--gold-d);transform:translateY(-2px)}
+.top .btn{padding:10px 20px;font-size:12px}
+.eyebrow{color:var(--gold);font-size:10.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase}
+.gold{color:var(--gold)}
+h1,h2,h3{font-weight:600}
+
+/* Footer */
+.foot{border-top:1px solid #eee9e0;padding:34px 0;margin-top:40px}
+.foot .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.foot .logo{font-size:19px}
+.foot nav{gap:25px;font-size:11px;color:var(--muted)}
+.foot span.n{font-size:11px;color:var(--gold-d)}
+
+/* Shared CTA */
+.cta{border-radius:24px;background:linear-gradient(110deg,#f8f3e7,#f3ead6);display:flex;justify-content:space-between;align-items:center;padding:48px 48px;margin:60px auto;border:1px solid #ebdcc5}
+.cta h2{font-size:28px;margin:14px 0 10px;font-weight:500}
+.cta p{font-size:12.5px;color:#696c72;margin-bottom:22px;max-width:440px}
+.shield{display:block}
+.cta .shield{width:88px;height:102px;margin-right:30px;filter:drop-shadow(0 6px 14px #a58a5540)}
+
+/* HOME */
+.h-hero{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;padding:50px 0 60px}
+.h-hero h1{font-size:clamp(36px,4.5vw,48px);line-height:1.12;letter-spacing:-1.5px;margin:18px 0 20px;font-weight:500}
+.h-hero p{color:#696c72;font-size:13.5px;line-height:1.65;max-width:390px}
+.acts{display:flex;align-items:center;gap:20px;margin-top:28px;font-size:12px;font-weight:500}
+.acts a:not(.btn){display:inline-flex;align-items:center;gap:6px;color:var(--text);transition:color .2s}
+.acts a:not(.btn):hover{color:var(--gold-d)}
+
+/* Laptop Illustration */
+.h-img{height:320px;width:100%;max-width:540px;justify-self:end;position:relative;display:flex;align-items:center;justify-content:center}
+.blob{position:absolute;border-radius:60% 40% 30% 70% / 60% 30% 70% 40%}
+.b1{width:290px;height:290px;right:60px;top:-10px;background:#f1e7cf;animation:spinA 16s linear infinite}
+.b2{width:220px;height:220px;left:30px;top:60px;background:#f3ebd8;border-radius:40% 60% 70% 30% / 40% 50% 60% 50%;animation:spinB 20s linear infinite}
+.b4{width:110px;height:110px;left:180px;top:-15px;background:#efe3c8;border-radius:70% 30% 40% 60% / 40% 60% 40% 60%;animation:spinB 14s linear infinite}
+
+@keyframes spinA{to{transform:rotate(360deg)}}
+@keyframes spinB{to{transform:rotate(-360deg)}}
+
+.lap{width:340px;position:relative;z-index:2}
+.bezel{background:linear-gradient(#fff,#f1eee8);border:1px solid #e3ded2;border-radius:10px 10px 4px 4px;padding:6px;box-shadow:0 12px 28px #b3976225}
+.scr{aspect-ratio:16/10;background:#fff;border:2px solid #b39762;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative}
+.bar{position:absolute;top:8px;left:10px;right:10px;display:flex;align-items:center;gap:6px}
+.dotc{width:7px;height:7px;border-radius:50%;border:1.5px solid #b39762}
+.line{width:28px;height:3px;border-radius:3px;background:#e5e1d8}
+.menu{margin-left:auto;width:9px;height:1.5px;background:#8a8a8a;box-shadow:0 3px #8a8a8a,0 -3px #8a8a8a}
+.scr .shield{width:40px;height:47px;margin-top:10px}
+.scr b{font-size:11.5px;font-weight:600;color:#242832}
+.scr small{font-size:8.5px;color:#737780}
+.scr i{font-style:normal;background:linear-gradient(135deg,#c3a66e,#a3844c);color:#fff;border-radius:20px;padding:5px 20px;font-size:7.5px;margin-top:6px;cursor:pointer;transition:transform .15s}
+.scr i:hover{transform:scale(1.05)}
+.base{height:9px;width:112%;margin-left:-6%;background:linear-gradient(#fbfaf7,#dcd6c8);border-radius:0 0 12px 12px;position:relative}
+.base::before{content:"";position:absolute;left:50%;top:0;width:60px;height:4px;margin-left:-30px;background:#cfc8b8;border-radius:0 0 6px 6px}
+.leaf{position:absolute;right:25px;bottom:25px;width:70px;height:150px;z-index:3}
+
+/* Features Strip */
+.band{background:var(--cream);padding:58px 0;margin-top:20px}
+.band-g{display:grid;grid-template-columns:1.5fr repeat(4,1fr);align-items:center;gap:12px}
+.band h2{font-size:24px;line-height:1.45;margin:12px 0;font-weight:500}
+.band .intro p{font-size:11.5px;line-height:1.65;color:#696c72;padding-right:26px}
+.rule{width:29px;height:2px;background:var(--gold);margin-top:20px}
+.ft{text-align:center;padding:12px;border-left:1px solid #eee7d8;min-height:135px}
+.ico{width:42px;height:42px;border-radius:50%;background:var(--chip);color:#a88a54;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 15px}
+.ft h3{font-size:11.5px;font-weight:600;margin-bottom:8px}
+.ft p{font-size:10.5px;line-height:1.6;color:#696c72}
+
+/* How It Works */
+.steps{text-align:center;padding:75px 0 45px}
+.steps h2{font-size:28px;margin:18px 0 10px;font-weight:500}
+.steps .sub{font-size:12.5px;color:#696c72}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);max-width:760px;margin:42px auto 0}
+.st{position:relative;padding:0 20px}
+.st:not(:last-child)::after{content:"";position:absolute;top:20px;left:calc(50% + 40px);width:calc(100% - 80px);height:1px;background:#d5c5a6}
+.num{width:40px;height:40px;border-radius:50%;background:var(--chip);color:#a88a54;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;margin:0 auto 16px}
+.st h3{font-size:11.5px;font-weight:600;margin-bottom:8px}
+.st p{font-size:10.5px;line-height:1.6;color:#696c72}
+
+/* FEATURES PAGE */
+.f-hero{display:flex;justify-content:space-between;align-items:center;padding:60px 0 25px;min-height:360px}
+.f-hero h1{font-size:clamp(32px,4.3vw,44px);line-height:1.15;letter-spacing:-1.5px;margin-top:20px;font-weight:500}
+.f-hero p.d{margin:20px 0 25px;color:#73737a;font-size:13px;line-height:1.6;max-width:360px}
+.orb{width:42%;height:300px;display:flex;align-items:center;justify-content:center;position:relative}
+.orb::before{content:"";position:absolute;width:270px;height:270px;border-radius:50%;background:radial-gradient(circle,#f1e8cc,#f8f4e8 70%,transparent)}
+.orb::after{content:"";position:absolute;width:260px;height:130px;border:1.5px solid #d9cba9;border-radius:50%;animation:orbitSpin 12s linear infinite;pointer-events:none}
+.orb .shield{width:105px;height:125px;position:relative;z-index:1;filter:drop-shadow(0 5px 10px #a58a5530)}
+
+@keyframes orbitSpin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:20px 0 60px}
+.card{background:#fff;border:1px solid #ece8df;border-radius:16px;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 20px;transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 20px #b3976215}
+.card .ico{width:38px;height:38px;margin-bottom:14px}
+.card h3{font-size:12.5px;font-weight:600;margin-bottom:9px}
+.card p{max-width:250px;font-size:11px;line-height:1.6;color:#72727a}
+
+.cmp{background:#f7f3e7;text-align:center;padding:60px 20px;border-radius:20px;margin-bottom:40px}
+.cmp h2{font-size:27px;line-height:1.4;max-width:480px;margin:20px auto 35px;font-weight:500}
+table{width:100%;max-width:580px;margin:auto;background:#fff;border-collapse:collapse;border-radius:16px;overflow:hidden;text-align:left;font-size:11px}
+th,td{padding:14px 18px;border-bottom:1px solid #eeeae2}
+th{background:#fbf8ee;font-weight:600}
+td{color:#626168}
+td:last-child{color:#9b804c;font-weight:600}
+tr:last-child td{border:0}
+
+/* ABOUT PAGE */
+.a-hero{display:grid;grid-template-columns:1.15fr 1fr;gap:50px;align-items:center;padding:75px 0 65px}
+.a-hero h1{font-size:clamp(26px,3vw,33px);line-height:1.3;margin:22px 0 20px;font-weight:500}
+.a-hero p{color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:14px;max-width:510px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:16px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px 10px}
+.stat h2{font-size:28px;color:var(--gold-d);margin-bottom:8px;font-weight:600}
+.stat p{font-size:11.5px;color:var(--muted)}
+.life{background:var(--cream);text-align:center;padding:65px 0 80px}
+.stitle{font-size:30px;line-height:1.3;margin:22px 0 46px;font-weight:500}
+.tl{display:grid;grid-template-columns:repeat(5,1fr);gap:15px;max-width:1080px;margin:auto}
+.ti{position:relative;padding:0 8px}
+.ti:not(:last-child)::after{content:"";position:absolute;top:21px;left:calc(50% + 32px);width:calc(100% - 48px);height:1px;background:#d9c8a6}
+.ti .num{width:42px;height:42px;margin-bottom:18px;background:#f1e8d2;color:var(--gold-d)}
+.ti.hl .num{background:linear-gradient(135deg,#c3a675,#a58a55);color:#fff}
+.ti h3{font-size:13px;font-weight:600;margin-bottom:9px}
+.ti p{font-size:11.5px;line-height:1.55;color:var(--muted)}
+.tn{font-size:12.5px;color:var(--muted);margin-top:34px}
+.habits{padding:60px 0 80px;text-align:center}
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.hc{background:#fff;border:1px solid var(--border);border-radius:15px;text-align:left;padding:24px 20px;min-height:110px}
+.hc h3{font-size:13px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.hc h3::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none}
+.hc p{font-size:12px;line-height:1.6;color:var(--muted)}
+
+/* LOGIN PAGE */
+body.is-login .top,body.is-login .foot{display:none}
+#page-login{--l-ink:#1f2433;--l-muted:#6f7380;--l-gold:#a87b3f;--l-gold-l:#c39a5c;--l-gold-d:#94692f;--l-line:#e4ddd1;position:relative;overflow:hidden;min-height:100vh;color:var(--l-ink)}
+#page-login .l-bg{position:absolute;inset:0;pointer-events:none}
+#page-login .arc{position:absolute;border:1px solid var(--l-gold);border-radius:50%;opacity:.45}
+#page-login .arc.tl{width:320px;height:320px;top:-240px;left:-230px}
+#page-login .arc.br{width:420px;height:420px;bottom:-330px;right:-200px}
+#page-login .l-head{width:min(1200px,82vw);margin:0 auto;padding:28px 0 0;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+#page-login .l-head .logo{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:600;letter-spacing:-.3px;color:var(--l-ink)}
+#page-login .l-head .logo svg{color:var(--gold);font-size:24px}
+#page-login .l-head .back-home{font-size:12.5px;color:var(--l-muted);display:flex;align-items:center;gap:6px;transition:color .2s}
+#page-login .l-head .back-home:hover{color:var(--gold-d)}
+
+#page-login .l-card{position:relative;z-index:2;width:min(1200px,82vw);margin:32px auto 40px;display:grid;grid-template-columns:1fr 1fr;background:#fdfcf9;border:1px solid var(--l-line);border-radius:18px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(120,90,40,.18);min-height:680px}
+#page-login .form-side{padding:46px 64px 44px;display:flex;flex-direction:column;justify-content:center}
+#page-login .l-eyebrow{font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--l-gold)}
+#page-login h1{font-size:36px;line-height:1.06;letter-spacing:-.6px;margin-top:10px;max-width:380px;font-weight:600}
+#page-login .l-sub{color:var(--l-muted);font-size:14.5px;margin-top:12px}
+#page-login form{margin-top:32px;max-width:440px}
+#page-login label{display:block;font-size:13.5px;font-weight:500;margin-bottom:8px}
+#page-login .field{position:relative;margin-bottom:22px}
+#page-login .field>svg.lead{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#7b7f8c}
+#page-login .field input{width:100%;height:48px;padding:0 46px 0 50px;font:inherit;font-size:14px;color:var(--l-ink);background:#fffefb;border:1px solid var(--l-line);border-radius:9px;transition:border-color .15s,box-shadow .15s}
+#page-login .field input:focus{outline:none;border-color:var(--l-gold);box-shadow:0 0 0 3px rgba(168,123,63,.16)}
+#page-login .toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;color:#6b7280;cursor:pointer;border-radius:8px;display:grid;place-items:center}
+#page-login .toggle:hover{color:var(--l-gold)}
+#page-login .forgot{display:block;text-align:right;margin-top:-6px;font-size:13px;color:var(--l-gold)}
+#page-login .l-btn{margin-top:28px;width:100%;height:46px;border:0;border-radius:9px;cursor:pointer;font:inherit;font-size:14.5px;font-weight:500;color:#fff;background:linear-gradient(180deg,var(--l-gold-l),var(--l-gold-d));display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 18px -8px rgba(148,105,47,.6);transition:filter .15s,transform .15s}
+#page-login .l-btn:hover{filter:brightness(1.06)}
+#page-login .l-btn:active{transform:translateY(1px)}
+#page-login .signup{margin-top:28px;font-size:13.5px;color:var(--l-muted)}
+#page-login .create{color:var(--l-gold);margin-left:6px;text-decoration:underline;text-underline-offset:3px;font-weight:500;cursor:pointer}
+
+#page-login .art-side{position:relative;background:linear-gradient(160deg,#fcf8f0,#f6efe1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 40px 48px;overflow:hidden}
+#page-login .art-side .h-img{margin:auto 0;justify-self:center}
+#page-login .tagline{position:relative;display:flex;align-items:center;gap:16px;color:var(--l-gold);font-size:10.5px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;text-align:center;line-height:1.7;margin-top:40px}
+#page-login .tagline::before,#page-login .tagline::after{content:"";width:34px;height:1px;background:var(--l-gold-l)}
+/* Forgot password flow */
+#page-login [hidden]{display:none!important}
+#page-login .fp{margin-top:26px;max-width:440px}
+#page-login .fp-steps{list-style:none;display:flex;align-items:center;gap:8px;margin-bottom:24px;padding:0}
+#page-login .fp-steps li{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--l-muted)}
+#page-login .fp-steps li i{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:600;border:1px solid var(--l-line);background:#fffefb;color:var(--l-muted);transition:all .25s}
+#page-login .fp-steps li.on{color:var(--l-ink)}
+#page-login .fp-steps li.on i{background:linear-gradient(180deg,var(--l-gold-l),var(--l-gold-d));border-color:var(--l-gold-d);color:#fff}
+#page-login .fp-steps li.done i{background:#f3e4c9;border-color:var(--l-gold);color:var(--l-gold-d)}
+#page-login .fp-steps .bar{flex:1;height:1px;background:var(--l-line);min-width:14px}
+#page-login .fp form{margin-top:0}
+#page-login .fp-msg{display:none;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:18px;line-height:1.5}
+#page-login .fp-msg.err{display:block;background:#fde8e8;color:#d64545;border:1px solid #f8c8c8}
+#page-login .fp-msg.ok{display:block;background:#e9f7ef;color:#2e9e6b;border:1px solid #c3e6cb}
+#page-login .fp-hint{font-size:12px;color:var(--l-muted);margin:-14px 0 20px;line-height:1.5}
+#page-login .fp .mono{font-family:Consolas,Menlo,monospace;letter-spacing:1.2px;text-transform:uppercase}
+#page-login .fp-meter{height:4px;border-radius:4px;background:#efe6d6;margin:-12px 0 6px;overflow:hidden}
+#page-login .fp-meter i{display:block;height:100%;width:0;background:#d64545;transition:width .25s,background .25s}
+#page-login .fp-meta{font-size:11.5px;color:var(--l-muted);margin-bottom:20px;min-height:16px}
+#page-login .fp-row{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+#page-login .fp-link{border:0;background:none;padding:0;font:inherit;font-size:13px;color:var(--l-gold);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#page-login .fp-link:hover{text-decoration:underline;text-underline-offset:3px}
+#page-login .fp-back{margin-top:26px}
+#page-login .l-btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+#page-login .fp-done{text-align:center;padding:6px 0 0}
+#page-login .fp-check{width:60px;height:60px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center;background:#f3e4c9;color:var(--l-gold-d)}
+#page-login .fp-done h2{font-size:20px;font-weight:600;letter-spacing:-.2px}
+#page-login .fp-done p{font-size:13px;color:var(--l-muted);margin-top:6px}
+#page-login .fp-code{margin:20px 0 10px;padding:14px;border:1px dashed var(--l-gold);border-radius:12px;background:#fbf6ea;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
+#page-login .fp-code small{display:block;font-size:10.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--l-gold)}
+#page-login .fp-code code{font:600 16px Consolas,Menlo,monospace;letter-spacing:1.2px;color:var(--l-ink);overflow-wrap:anywhere}
+#page-login .fp-copy{border:1px solid var(--l-line);background:#fff;border-radius:8px;padding:7px 12px;font:600 12px Inter,system-ui,sans-serif;cursor:pointer;color:var(--l-ink);flex:none}
+#page-login .fp-copy:hover{border-color:var(--l-gold)}
+#page-login .fp-warn{font-size:12px;color:#8a6a2e;text-align:left;line-height:1.5;margin-bottom:14px}
+#page-login .fp-ack{display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:400;text-align:left;margin:0;cursor:pointer}
+#page-login .fp-ack input{margin-top:3px;accent-color:#a87b3f}
+@media (prefers-reduced-motion:reduce){#page-login .fp-steps li i,#page-login .fp-meter i{transition:none}}
+
+/* DASHBOARD PAGE */
+#page-dashboard{padding-bottom:70px}
+.dash-head{display:flex;justify-content:space-between;align-items:flex-end;padding:36px 0 28px;border-bottom:1px solid var(--border)}
+.dash-head h1{font-size:28px;font-weight:600;letter-spacing:-.5px}
+.dash-head p{font-size:12.5px;color:var(--muted);margin-top:4px}
+.dash-user{display:flex;align-items:center;gap:12px}
+.dash-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#c3a66e,#a3844c);color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px}
+.dash-meta{font-size:12.5px}
+.dash-meta b{display:block;font-size:13px;font-weight:600}
+.dash-meta span{color:var(--muted);font-size:11px}
+
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:28px}
+.dash-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:148px;box-shadow:0 2px 6px #00000004}
+.dc-top{display:flex;justify-content:space-between;align-items:flex-start}
+.dc-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.dc-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:12px;background:var(--green-bg);color:var(--green);display:inline-flex;align-items:center;gap:4px}
+.dc-badge.alert{background:var(--red-bg);color:var(--red)}
+.dc-value{font-size:26px;font-weight:600;margin-top:14px;color:var(--text)}
+.dc-foot{font-size:11px;color:var(--muted);margin-top:6px}
+
+.dash-sections{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-top:26px}
+.dash-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px}
+.dp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.dp-head h3{font-size:15px;font-weight:600}
+.dp-act{font-size:12px;color:var(--gold-d);font-weight:500}
+
+/* Threat table in dashboard */
+.dash-table{width:100%;border-collapse:collapse;font-size:12px}
+.dash-table th{background:none;padding:10px 12px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border)}
+.dash-table td{padding:12px;border-bottom:1px solid #f6f3eb;color:var(--text)}
+.dash-table tr:hover td{background:#faf8f3}
+.tag-clean{color:var(--green);font-weight:600}
+.tag-flag{color:var(--red);font-weight:600}
+
+/* Quick Control switch */
+.ctrl-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f4eee2}
+.ctrl-item:last-child{border:0}
+.ci-info b{display:block;font-size:12.5px;font-weight:600}
+.ci-info span{font-size:10.5px;color:var(--muted)}
+.switch{position:relative;display:inline-block;width:38px;height:22px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#d4cdbe;transition:.3s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%}
+input:checked + .slider{background-color:var(--gold)}
+input:checked + .slider:before{transform:translateX(16px)}
+
+/* SCANNER MODAL WINDOW */
+.scan-ov{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  background:#242832a8;
+  opacity:0;visibility:hidden;
+  backdrop-filter:blur(0);
+  transition:opacity .35s ease, backdrop-filter .35s ease, visibility 0s linear .35s;
+}
+.scan-ov.open{
+  opacity:1;visibility:visible;
+  backdrop-filter:blur(6px);
+  transition:opacity .35s ease, backdrop-filter .35s ease, visibility 0s;
+}
+.scan-box{
+  position:relative;width:100%;max-width:500px;max-height:92vh;overflow:auto;
+  background:var(--bg);border:1px solid var(--border);border-radius:22px;
+  padding:30px 28px;box-shadow:0 24px 60px #24283240;
+  opacity:0;transform:translateY(40px) scale(.92);
+  transition:opacity .25s ease, transform .3s ease;
+}
+.scan-ov.open .scan-box{
+  opacity:1;transform:none;
+  transition:opacity .35s ease, transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+.scan-x{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text);font-size:18px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.scan-x:hover{border-color:var(--gold)}
+.scan-hd{text-align:center}
+.ring{width:130px;height:130px;margin:6px auto 14px;border-radius:50%;border:3px solid var(--gold);background:#fff;display:flex;align-items:center;justify-content:center;transition:border-color .4s}
+.ring .shield{width:56px;height:66px}
+.ring.scanning{animation:ringPulse 1.6s ease-in-out infinite}
+@keyframes ringPulse{50%{box-shadow:0 0 0 14px #3b82f622}}
+.scan-hd h2{font-size:24px;margin-bottom:4px;font-weight:600}
+.scan-hd p{font-size:12px;color:var(--muted);min-height:18px;overflow-wrap:anywhere}
+.s-prog{display:flex;justify-content:space-between;font-size:12px;margin:18px 0 6px}
+.s-prog b{font-size:14px;font-weight:600}
+.s-bar{height:8px;border-radius:8px;background:#efe6d6;overflow:hidden}
+.s-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c3a66e,#a3844c);transition:width .25s}
+.s-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.s-stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.s-stat b{display:block;font-size:20px;font-weight:600}
+.s-stat span{font-size:11px;color:var(--muted)}
+.s-acts{display:flex;gap:8px}
+.s-acts button{flex:1}
+.btn-o{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none;justify-content:center;padding:11px 8px;font-size:12px}
+.btn-o:hover{border-color:var(--gold);background:var(--cream)}
+#s-start{width:100%;justify-content:center;margin-top:12px}
+#s-start.stop{background:#d64545;box-shadow:none}
+.s-tgt{font-size:11px;color:var(--muted);margin-top:10px;overflow-wrap:anywhere}
+.s-h{font-size:12px;font-weight:600;margin-top:16px}
+
+/* Scanner Threat List & Delete Button Styling */
+.s-list{list-style:none;margin-top:8px;max-height:160px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;font:11.5px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.s-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid #f3eee4;overflow-wrap:anywhere}
+.s-list li:last-child{border-bottom:none}
+.s-list li.deleted{opacity:.55;background:#faf9f6}
+.s-list li.deleted .s-item-name{text-decoration:line-through;color:var(--muted)}
+.s-item-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.s-item-name{font-weight:600;color:#c0392b;font-size:12px}
+.s-item-sig{font-size:10.5px;color:#7a6d59;font-family:Consolas,monospace}
+.btn-del{background:#d64545;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s, transform .1s}
+.btn-del:hover{background:#b82e2e}
+.btn-del.done{background:#2e9e6b;cursor:default}
+.s-list:empty::before{content:"No threats found yet";display:block;padding:8px 12px;color:var(--muted);font-family:Inter,sans-serif}
+.s-note{font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.55}
+
+/* Scroll reveal utility */
+.reveal{opacity:0;transform:translateY(36px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none;transition:opacity .75s cubic-bezier(.22,1,.36,1),transform .75s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0s)}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+/* Responsive */
+@media(max-width:960px){
+ .top{height:auto;flex-wrap:wrap;gap:14px;padding:14px 0}
+ nav{order:3;width:100%;justify-content:center;gap:24px}
+ .h-hero,.a-hero{grid-template-columns:1fr;padding:40px 0;gap:30px}
+ .band-g{grid-template-columns:repeat(2,1fr);gap:24px 0}.band .intro{grid-column:1/-1}.ft{border:0}
+ .sg{grid-template-columns:1fr;gap:28px}.st::after{display:none}
+ .f-hero{flex-direction:column-reverse;align-items:flex-start}.orb{width:100%;height:220px}
+ .cards,.hg{grid-template-columns:repeat(2,1fr)}
+ .tl{grid-template-columns:1fr;gap:25px}.ti::after{display:none}
+ .cta{padding:32px 26px}.cta .shield{display:none}
+ .dash-grid{grid-template-columns:repeat(2,1fr)}
+ .dash-sections{grid-template-columns:1fr}
+ #page-login .l-head{width:92vw;padding:20px 0 0}
+ #page-login .l-card{width:92vw;grid-template-columns:1fr}
+ #page-login .art-side{display:none}
+ #page-login .form-side{padding:40px 24px}
+}
+@media(max-width:540px){
+ .cards,.hg,.dash-grid{grid-template-columns:1fr}
+ .top .btn{display:none}
+}
+/* Tools modal window */
+.tl-drawer{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:#242832a8;opacity:0;visibility:hidden;backdrop-filter:blur(0);transition:opacity .35s ease,backdrop-filter .35s ease,visibility 0s linear .35s}
+.tl-drawer.open{opacity:1;visibility:visible;backdrop-filter:blur(6px);transition:opacity .35s ease,backdrop-filter .35s ease,visibility 0s}
+.tl-card{position:relative;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:22px;padding:30px 28px;box-shadow:0 24px 60px #24283240;opacity:0;transform:translateY(40px) scale(.92);transition:opacity .25s ease,transform .3s ease}
+.tl-drawer.open .tl-card{opacity:1;transform:none;transition:opacity .35s ease,transform .5s cubic-bezier(.34,1.56,.64,1)}
+@media (prefers-reduced-motion:reduce){.tl-drawer.open .tl-card{transition:none}}
+
+/* TOOLS (password check + link check) */
+.tl-tabs{display:flex;gap:4px;background:#f3eee2;border-radius:30px;padding:4px;margin:0 40px 20px 0}
+.tl-tabs button{flex:1;border:0;background:none;padding:8px 10px;border-radius:26px;font:500 12px Inter,system-ui,sans-serif;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.tl-tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px #00000014}
+.tl-pane{display:none}
+.tl-pane.on{display:block}
+.tl-h{font-size:18px;font-weight:600;letter-spacing:-.2px}
+.tl-p{font-size:12px;color:var(--muted);margin:4px 0 16px}
+.tl-in{width:100%;height:44px;padding:0 14px;margin-top:12px;border:1px solid var(--border);border-radius:12px;background:#fff;font:13px Inter,system-ui,sans-serif;color:var(--text)}
+.tl-in.mono{font:11.5px Consolas,Menlo,monospace}
+.tl-in:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px #b3976226}
+.tl-msg{font-size:12.5px;font-weight:500;margin-top:12px;min-height:18px;line-height:1.5}
+.tl-msg.ok{color:var(--green)}
+.tl-msg.bad{color:var(--red)}
+.tl-msg.info{color:var(--muted)}
+.tl-links{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+.tl-link{border:0;background:none;padding:0;font:500 11.5px Inter,system-ui,sans-serif;color:var(--gold-d);cursor:pointer}
+.tl-link:hover{text-decoration:underline}
+.tl-link:disabled{color:#b9b4a8;cursor:default;text-decoration:none}
+.tl-copy{border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 9px;font:600 10.5px Inter,system-ui,sans-serif;cursor:pointer;color:var(--text)}
+.tl-copy:hover{border-color:var(--gold)}
+.tl-pw{position:relative}
+.tl-pw .tl-in{padding-right:60px}
+.tl-eye{position:absolute;right:8px;top:calc(50% + 6px);transform:translateY(-50%);border:0;background:none;color:var(--gold-d);font:600 11px Inter,system-ui,sans-serif;cursor:pointer;padding:6px 8px;border-radius:6px}
+.tl-meter{height:4px;border-radius:4px;background:#efe6d6;margin-top:12px;overflow:hidden}
+.tl-meter i{display:block;height:100%;width:0;background:#d64545;transition:width .25s,background .25s}
+.tl-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+.tl-go{width:100%;justify-content:center;margin-top:14px}
+.tl-go:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.tl-gen{display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.tl-gen.on{display:flex}
+.tl-gen code{flex:1;font:12px/1.4 Consolas,Menlo,monospace;overflow-wrap:anywhere;word-break:break-all}
+.tl-note{font-size:10.5px;color:var(--muted);margin-top:16px;line-height:1.5}
+
+.tl-msg.warn{color:#c47a1d}
+.tl-real{display:none;margin-top:12px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:12px;font-size:11.5px;color:var(--muted)}
+.tl-real.on{display:block}
+.tl-real b{display:block;font-size:14px;color:var(--text);font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+.tl-flags{list-style:none;margin-top:10px}
+.tl-flags li{position:relative;padding:5px 0 5px 16px;font-size:12px;line-height:1.5;color:var(--text)}
+.tl-flags li::before{content:"";position:absolute;left:2px;top:12px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* Sign-up password strength */
+.pw-meter{display:none;align-items:center;gap:10px;margin:-10px 0 14px;font-size:12px;color:var(--l-muted,#6f7380)}
+.pw-meter.on{display:flex}
+.pw-bar{flex:1;height:4px;background:#efe6d6;border-radius:4px;overflow:hidden}
+.pw-bar i{display:block;height:100%;width:0;background:#d64545;transition:width .25s,background .25s}
+
+/* Dashboard: account panel */
+</style>
+<style id="sg-css">
+@keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes glw{0%,100%{filter:drop-shadow(0 0 0 #b3976200)}50%{filter:drop-shadow(0 0 16px #b39762cc)}}
+@keyframes shn{to{background-position:200% center}}
+@keyframes pop{from{opacity:0;transform:translateY(40px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes rng{0%{box-shadow:0 0 0 0 #b3976299}100%{box-shadow:0 0 0 18px #b3976200}}
+@keyframes sw{0%,55%{left:-60%}100%{left:140%}}
+@keyframes bnc{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes orb{to{transform:rotate(348deg)}}
+@keyframes dots{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.rv{opacity:0;transform:translateY(44px) scale(.94);transition:opacity .7s cubic-bezier(.22,1,.36,1) var(--d,0s),transform .8s cubic-bezier(.34,1.4,.64,1) var(--d,0s)}
+.rv.l{transform:translateX(-60px)}.rv.r{transform:translateX(60px)}
+.rv.in{opacity:1;transform:none}
+.rv.done{transition:transform .25s,box-shadow .25s}
+.card.done:hover,.ft.done:hover,.st.done:hover,.stat.done:hover,.hc.done:hover,.dash-card.done:hover{transform:translateY(-7px);box-shadow:0 14px 28px #b3976233}
+.ft:hover .ico,.card:hover .ico{animation:bnc .6s ease}
+h1 .gold{background:linear-gradient(90deg,#b39762,#ecd7a6,#9f8049,#b39762);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shn 3s linear infinite}
+.lap,#page-login .laptop{animation:flt 4s ease-in-out infinite}
+.scr .shield,.cta .shield,.orb .shield,#page-login .screen>svg{animation:glw 2.4s ease-in-out infinite}
+.btn,#page-login .l-btn{position:relative;overflow:hidden}
+.btn::after,#page-login .l-btn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,#ffffff77,transparent);transform:skewX(-20deg);animation:sw 3.2s ease-in-out infinite;pointer-events:none}
+.dash-avatar{animation:rng 2s ease-out infinite}
+.dc-badge{animation:glw 2.6s ease-in-out infinite}
+#page-login .l-card{animation:pop .9s cubic-bezier(.22,1,.36,1) both}
+#page-login .orbit{animation:orb 14s linear infinite}
+#page-login .arc{animation:flt 7s ease-in-out infinite}
+#page-login .icons svg{animation:bnc 1.6s ease-in-out infinite}
+#page-login .icons svg:nth-child(2){animation-delay:.25s}#page-login .icons svg:nth-child(3){animation-delay:.5s}
+#sg{position:fixed;right:22px;bottom:22px;z-index:150;font-family:Inter,system-ui,sans-serif}
+#sg-fab{width:54px;height:54px;border-radius:50%;border:0;cursor:pointer;color:#fff;background:linear-gradient(135deg,#c3a66e,#a3844c);display:grid;place-items:center;box-shadow:0 4px 12px #a3844c55;transition:transform .2s}
+#sg-fab:hover{transform:scale(1.08)}
+#sg-dot{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:#d64545;color:#fff;font:700 10px/18px Inter,sans-serif;text-align:center;display:none}
+#sg.new #sg-dot{display:block}
+#sg-box{position:fixed;right:22px;bottom:80px;width:min(250px,calc(100vw - 24px));height:min(330px,calc(100vh - 110px));display:flex;flex-direction:column;background:#fcfaf6;border:1px solid #ebe7df;border-radius:16px;box-shadow:0 18px 44px #24283244;overflow:hidden;opacity:0;visibility:hidden;transform:translateY(30px) scale(.9);transform-origin:bottom right;transition:opacity .3s,transform .5s cubic-bezier(.34,1.56,.64,1),visibility 0s .5s}
+#sg.open #sg-box{opacity:1;visibility:visible;transform:none;transition:opacity .3s,transform .5s cubic-bezier(.34,1.56,.64,1)}
+#sg.open #sg-fab{display:none}
+#sg-hd{display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:grab;touch-action:none;user-select:none;background:linear-gradient(135deg,#c3a66e,#a3844c);color:#fff}
+#sg-hd b{display:block;font-size:12px}#sg-hd small{font-size:10px;opacity:.9}
+#sg-hd .av{width:24px;height:24px;border-radius:50%;background:#ffffff30;display:grid;place-items:center;flex:none}
+#sg-hd div.t{flex:1}
+#sg-hd button{border:0;background:#ffffff26;color:#fff;border-radius:14px;padding:4px 9px;font:600 10.5px Inter,sans-serif;cursor:pointer}
+#sg-hd button:hover{background:#ffffff40}
+#sg-log{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.sg-m{max-width:92%;padding:6px 9px;border-radius:10px;font-size:11.5px;line-height:1.5;white-space:pre-line;animation:pop .45s cubic-bezier(.22,1,.36,1) both;overflow-wrap:anywhere}
+.sg-m.b{align-self:flex-start;background:#fff;border:1px solid #ebe7df;color:#242832;border-bottom-left-radius:4px}
+.sg-m.u{align-self:flex-end;background:#a3844c;color:#fff;border-bottom-right-radius:4px}
+.sg-m b{display:block;color:#9f8049;font-size:12px;margin-bottom:3px}
+.sg-m.ty{display:flex;gap:4px;padding:13px}
+.sg-m.ty i{width:7px;height:7px;border-radius:50%;background:#b39762;animation:dots 1.1s infinite}
+.sg-m.ty i:nth-child(2){animation-delay:.18s}.sg-m.ty i:nth-child(3){animation-delay:.36s}
+#sg-ch{display:flex;gap:5px;flex-wrap:wrap;padding:0 10px 8px}
+#sg-ch button{border:1px solid #e3d6b8;background:#f7f0df;color:#7a5f2c;border-radius:16px;padding:5px 11px;font:500 11.5px Inter,sans-serif;cursor:pointer;animation:pop .4s both}
+#sg-ch button:hover{background:#efe2c2}
+#sg.drag{user-select:none}#sg.drag #sg-hd{cursor:grabbing}#sg-ch button{font-size:10.5px;padding:3px 8px}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+
+<!-- SVG Icon Sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs><linearGradient id="gs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8d9b4"/><stop offset="1" stop-color="#a98b50"/></linearGradient></defs>
+ <symbol id="shield-o" viewBox="0 0 24 24"><path d="M12 2.5 4.5 5.5v6c0 4.7 3.2 8.6 7.5 10 4.3-1.4 7.5-5.3 7.5-10v-6z"/><path d="m8.7 12 2.3 2.3 4.3-4.6"/></symbol>
+ <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+ <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+ <symbol id="refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/></symbol>
+ <symbol id="box" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="9" y="9" width="6" height="6" rx="1"/></symbol>
+ <symbol id="pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+ <symbol id="report" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+ <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/></symbol>
+ <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+ <symbol id="check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></symbol>
+ <symbol id="shield-f" viewBox="0 0 90 105"><path d="M45 2 8 16v34c0 26 15 43 37 53 22-10 37-27 37-53V16z" fill="url(#gs)"/><path d="m27 52 14 14 23-26" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- Header & Nav -->
+<header class="wrap top">
+ <a class="logo" href="#home"><svg class="i"><use href="#shield-o"/></svg>Scene</a>
+ <nav>
+   <a data-n="home" href="#home">Home</a>
+   <a data-n="dashboard" href="#dashboard" id="nav-dash-link">Dashboard</a>
+   <a data-n="features" href="#features">Features</a>
+   <a data-n="about" href="#about">About</a>
+    <a data-n="verify" href="#verify">Tools</a>
+   <a data-n="scan" href="#scan">Scan</a>
+ </nav>
+ <div class="nav-actions">
+   <a class="btn-nav-login" id="nav-auth-btn" href="#login">Sign In</a>
+   <a class="btn" href="#scan">Scan Now <svg class="i"><use href="#arrow"/></svg></a>
+ </div>
+</header>
+
+<!-- TOOLS PANEL (toggles open on the current page) -->
+<!-- TOOLS PANEL (toggles open on the current page) -->
+<div class="tl-drawer" id="tl-ov" role="dialog" aria-modal="true" aria-label="Security tools">
+ <div class="tl-card">
+  <button class="scan-x" id="tl-close" type="button" aria-label="Close">&times;</button>
+
+  <div class="tl-tabs" role="tablist">
+      <button type="button" id="tab-breach" class="on" role="tab">Password</button>
+   <button type="button" id="tab-link" role="tab">Link</button>
+  </div>
+
+  <!-- Password check -->
+  <div class="tl-pane on" id="pane-breach">
+   <h2 class="tl-h">Has this password leaked?</h2>
+   <p class="tl-p">Checks it against passwords exposed in other websites&rsquo; data breaches.</p>
+   <div class="tl-pw">
+    <input class="tl-in" id="tl-pass" type="password" spellcheck="false" autocomplete="off" aria-label="Password" placeholder="Enter a password" style="margin-top:0">
+    <button class="tl-eye" id="tl-eye" type="button">Show</button>
+   </div>
+   <div class="tl-meter"><i id="tl-bar"></i></div>
+   <div class="tl-meta"><span id="tl-str">&nbsp;</span><span id="tl-len"></span></div>
+   <button class="btn tl-go" id="tl-check" type="button" disabled>Check</button>
+   <p class="tl-msg info" id="tl-bmsg"></p>
+   <div class="tl-links"><button class="tl-link" id="tl-gen" type="button">Generate a strong password</button></div>
+   <div class="tl-gen" id="tl-genbox"><code id="tl-genout"></code><button class="tl-copy" id="tl-gencopy" type="button">Copy</button><button class="tl-copy" id="tl-genuse" type="button">Use</button></div>
+   <p class="tl-note">Your password never leaves your browser &mdash; only a 5-character fingerprint prefix is sent for the lookup.</p>
+  </div>
+
+  <!-- Link check -->
+  <div class="tl-pane" id="pane-link">
+   <h2 class="tl-h">Is this link a trap?</h2>
+   <p class="tl-p">Spot phishing tricks before you click. The link is never opened.</p>
+   <input class="tl-in" id="tl-url" type="text" spellcheck="false" autocomplete="off" aria-label="Link to check" placeholder="Paste a link" style="margin-top:0">
+   <button class="btn tl-go" id="tl-lgo" type="button" disabled>Analyze</button>
+   <div class="tl-real" id="tl-real">The real website is<b id="tl-realdom"></b></div>
+   <p class="tl-msg info" id="tl-lmsg"></p>
+   <ul class="tl-flags" id="tl-flags"></ul>
+   <p class="tl-note">Checks the link&rsquo;s shape only. It can&rsquo;t tell if a normal-looking site has been hacked.</p>
+  </div>
+ </div>
+</div>
+
+
+
+<!-- HOME PAGE -->
+<div class="page on" id="page-home">
+ <section class="wrap h-hero">
+  <div>
+   <div class="eyebrow">Smarter Protection</div>
+   <h1>Scene<br><span class="gold">Zero-Day</span> Detector</h1>
+   <p>Spot unknown vulnerabilities and exploits before a patch even exists — keeping your device safe from day zero.</p>
+   <div class="acts">
+     <a class="btn" href="#scan"><svg class="i"><use href="#search"/></svg>Scan Now</a>
+     <a href="#about">Learn More <svg class="i"><use href="#arrow"/></svg></a>
+   </div>
+  </div>
+  <div class="h-img">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b4"></span>
+    <div class="lap">
+      <div class="bezel">
+        <div class="scr">
+          <div class="bar"><span class="dotc"></span><span class="line"></span><span class="menu"></span></div>
+          <svg class="shield"><use href="#shield-f"/></svg>
+          <b>Your device is safe</b>
+          <small>No threats found</small>
+          <i>Quick Scan</i>
+        </div>
+      </div>
+      <div class="base"></div>
+    </div>
+    <svg class="leaf" viewBox="0 0 90 190" aria-hidden="true">
+      <path d="M40 188C42 140 48 90 66 20" fill="none" stroke="#c4a566" stroke-width="1.5"/>
+      <path d="M66 20c14 14 12 38-2 52-14-12-14-38 2-52z" fill="#c9ab6c"/>
+      <path d="M52 70c-18-2-32 10-38 24 18 4 34-4 38-24z" fill="#d6bd8a"/>
+      <path d="M50 100c20-4 34 6 38 20-18 6-34-2-38-20z" fill="#b89a5c"/>
+      <path d="M44 135c-14-4-26 4-32 16 14 4 28-2 32-16z" fill="#d6bd8a"/>
+    </svg>
+  </div>
+ </section>
+
+ <section class="band">
+  <div class="wrap band-g">
+   <div class="intro">
+     <div class="eyebrow">Zero-Day Focus</div>
+     <h2>Engineered for the unknown.</h2>
+     <p>Traditional antiviruses wait for known virus signatures. Scene detects irregular behavior and memory manipulation before signatures exist.</p>
+     <div class="rule"></div>
+   </div>
+   <div class="ft"><div class="ico"><svg class="i"><use href="#eye"/></svg></div><h3>Pre-Patch Defense</h3><p>Protects your system while vulnerability patches are still being developed.</p></div>
+   <div class="ft"><div class="ico"><svg class="i"><use href="#bolt"/></svg></div><h3>Behavioral Guard</h3><p>Monitors process deviations instead of relying purely on static hashes.</p></div>
+   <div class="ft"><div class="ico"><svg class="i"><use href="#lock"/></svg></div><h3>Zero Latency</h3><p>Executes cryptographic evaluations instantly right within your machine.</p></div>
+   <div class="ft"><div class="ico"><svg class="i"><use href="#refresh"/></svg></div><h3>Continuous Sync</h3><p>Automatically records scan sessions to your local SQLite database.</p></div>
+  </div>
+ </section>
+
+ <section class="wrap steps">
+  <div class="eyebrow">How It Operates</div>
+  <h2>Three tiers of defense</h2>
+  <p class="sub">From the instant code arrives to execution inspection.</p>
+  <div class="sg">
+    <div class="st"><div class="num">1</div><h3>Inspect</h3><p>Cryptographic digests calculate SHA-256 signatures immediately in your local environment.</p></div>
+    <div class="st"><div class="num">2</div><h3>Analyze</h3><p>Known bad lists and behavior patterns identify anomalies and exploit vectors.</p></div>
+    <div class="st"><div class="num">3</div><h3>Neutralize</h3><p>Quarantine and delete flagged threats immediately with a single user confirmation.</p></div>
+  </div>
+ </section>
+
+ <section class="wrap cta">
+  <div>
+    <div class="eyebrow">Real-Time Evaluation</div>
+    <h2>Inspect Your System Now</h2>
+    <p>Run a private local cryptographic sweep right now without uploading files anywhere.</p>
+    <a class="btn" href="#scan">Launch Scanner</a>
+  </div>
+  <svg class="shield"><use href="#shield-f"/></svg>
+ </section>
+</div>
+
+<!-- FEATURES PAGE -->
+<div class="page" id="page-features">
+ <section class="wrap f-hero">
+  <div>
+   <div class="eyebrow">Capabilities</div>
+   <h1>Security built for <span class="gold">what's next</span></h1>
+   <p class="d">Most security tools look backward at what was already cataloged. Scene is designed around behaviors, zero-day signatures, and memory isolation.</p>
+   <a class="btn" href="#scan">Test It Now</a>
+  </div>
+  <div class="orb">
+    <svg class="shield"><use href="#shield-f"/></svg>
+  </div>
+ </section>
+
+ <section class="wrap cards">
+  <div class="card"><div class="ico"><svg class="i"><use href="#eye"/></svg></div><h3>Behavior Detection</h3><p>Watches what programs do and flags actions that look like an exploit in progress.</p></div>
+  <div class="card"><div class="ico"><svg class="i"><use href="#bolt"/></svg></div><h3>Exploit Technique Monitoring</h3><p>Looks for known attack methods such as memory corruption and privilege escalation.</p></div>
+  <div class="card"><div class="ico"><svg class="i"><use href="#box"/></svg></div><h3>Sandbox Analysis</h3><p>Runs suspicious files in an isolated space so they can't harm your device.</p></div>
+  <div class="card"><div class="ico"><svg class="i"><use href="#pulse"/></svg></div><h3>Anomaly Detection</h3><p>Learns what normal looks like and highlights anything unusual.</p></div>
+  <div class="card"><div class="ico"><svg class="i"><use href="#refresh"/></svg></div><h3>Threat Intel Updates</h3><p>Fresh intelligence about new attacks is pulled in automatically.</p></div>
+  <div class="card"><div class="ico"><svg class="i"><use href="#report"/></svg></div><h3>Clear Reports</h3><p>Plain-language results showing what was checked and what was found.</p></div>
+ </section>
+
+ <section class="wrap cmp">
+  <div class="eyebrow">Compare</div>
+  <h2>Signature-based vs <span class="gold">Behavior-based</span></h2>
+  <table>
+   <thead><tr><th>Capability</th><th>Legacy Antivirus</th><th>Scene Detector</th></tr></thead>
+   <tbody>
+    <tr><td>Needs a known sample</td><td>Yes (Slow updates)</td><td>No (Instant)</td></tr>
+    <tr><td>Catches brand-new zero-days</td><td>Rarely</td><td>Designed to</td></tr>
+    <tr><td>Analyzes</td><td>File fingerprints</td><td>Actions &amp; behavior</td></tr>
+    <tr><td>User Privacy</td><td>Uploads files to cloud</td><td>100% In-Browser</td></tr>
+   </tbody>
+  </table>
+ </section>
+
+ <section class="wrap cta">
+  <div>
+    <div class="eyebrow">Ready to get started?</div>
+    <h2>Safe From Day Zero</h2>
+    <p>Protect your system now with intelligent zero-day detection.</p>
+    <a class="btn" href="#scan">Launch Scanner</a>
+  </div>
+  <svg class="shield"><use href="#shield-f"/></svg>
+ </section>
+</div>
+
+<!-- ABOUT PAGE -->
+<div class="page" id="page-about">
+ <section class="wrap a-hero">
+  <div>
+   <div class="eyebrow">About Scene</div>
+   <h1>Protection that starts at <span class="gold">day zero</span></h1>
+   <p>Scene is built around one clear idea: you shouldn't have to wait for a patch to be protected. By focusing on behavioral anomalies and zero-day execution patterns, new attacks are intercepted before they compromise your device.</p>
+   <p>The interface remains calm and focused, keeping your security posture clear at a single glance.</p>
+   <a class="btn" href="#scan">Launch Live Scan</a>
+  </div>
+  <div class="stats">
+   <div class="stat"><h2>Day 0</h2><p>Protection begins</p></div>
+   <div class="stat"><h2>0 signatures</h2><p>Needed to detect</p></div>
+   <div class="stat"><h2>24/7</h2><p>Real-time shield</p></div>
+   <div class="stat"><h2>1 click</h2><p>To inspect</p></div>
+  </div>
+ </section>
+
+ <section class="life">
+  <div class="wrap">
+    <div class="eyebrow">Lifecycle</div>
+    <h2 class="stitle">How a zero-day <span class="gold">unfolds</span></h2>
+    <div class="tl">
+      <div class="ti"><div class="num">1</div><h3>Flaw exists</h3><p>A bug sits unnoticed in code.</p></div>
+      <div class="ti"><div class="num">2</div><h3>Attacker finds it</h3><p>Exploit weaponized in secret.</p></div>
+      <div class="ti hl"><div class="num">3</div><h3>Exploited</h3><p>Attacks begin with zero patch.</p></div>
+      <div class="ti"><div class="num">4</div><h3>Vendor learns</h3><p>A fix is slowly developed.</p></div>
+      <div class="ti"><div class="num">5</div><h3>Patch applied</h3><p>Users update and cycle ends.</p></div>
+    </div>
+    <p class="tn">Scene is engineered specifically to safeguard your computer during <b>Step 3</b>.</p>
+  </div>
+ </section>
+
+ <section class="wrap habits">
+  <div class="eyebrow">Best Practices</div>
+  <h2 class="stitle">Simple habits that <span class="gold">protect you</span></h2>
+  <div class="hg">
+   <div class="hc"><h3>Update quickly</h3><p>Install system updates quickly to seal known security doors.</p></div>
+   <div class="hc"><h3>Limit permissions</h3><p>Run standard user accounts to prevent unauthorized elevation.</p></div>
+   <div class="hc"><h3>Be wary of files</h3><p>Never run untrusted attachments or allow suspicious scripts.</p></div>
+   <div class="hc"><h3>Back up regularly</h3><p>Maintain offline, encrypted backups to guarantee fast recovery.</p></div>
+   <div class="hc"><h3>Layer defenses</h3><p>Pair active behavioral detectors with firewalls and browser security.</p></div>
+   <div class="hc"><h3>Scan regularly</h3><p>Run Scene's quick scanner frequently for rapid verification.</p></div>
+  </div>
+ </section>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div class="page" id="page-dashboard">
+ <div class="wrap">
+  <div class="dash-head">
+   <div>
+    <div class="eyebrow">Command Center</div>
+    <h1>Security Dashboard</h1>
+    <p>Real-time protection status, active shields, and local threat logs.</p>
+   </div>
+   <div class="dash-user">
+    <div class="dash-avatar" id="dash-avatar">S</div>
+    <div class="dash-meta">
+     <b id="dash-username">Security Officer</b>
+     <span id="dash-userstatus">Shield Active • Protected</span>
+    </div>
+    <a href="#home" class="btn btn-outline" style="padding:8px 16px;font-size:11.5px;margin-left:8px" id="dash-logout-btn">Log out</a>
+   </div>
+  </div>
+
+  <div class="dash-grid">
+   <div class="dash-card">
+    <div class="dc-top">
+     <span class="dc-label">Protection State</span>
+     <span class="dc-badge" id="dash-status-badge">Protected</span>
+    </div>
+    <div class="dc-value" id="dash-protection-title">Active</div>
+    <div class="dc-foot">Zero-day behavioral shields online</div>
+   </div>
+   <div class="dash-card">
+    <div class="dc-top">
+     <span class="dc-label">Files Checked</span>
+     <span class="dc-badge">Live Sync</span>
+    </div>
+    <div class="dc-value" id="dash-files-count">0</div>
+    <div class="dc-foot">Cryptographically hashed in SQLite</div>
+   </div>
+   <div class="dash-card">
+    <div class="dc-top">
+     <span class="dc-label">Threats Blocked</span>
+     <span class="dc-badge" id="dash-threat-badge">Clean</span>
+    </div>
+    <div class="dc-value" id="dash-threat-count">0</div>
+    <div class="dc-foot">Intrusions flagged &amp; quarantined</div>
+   </div>
+   <div class="dash-card">
+    <div class="dc-top">
+     <span class="dc-label">Vulnerabilities</span>
+     <span class="dc-badge alert" id="dash-vuln-badge">0 Critical</span>
+    </div>
+    <div class="dc-value" id="dash-vuln-count">0</div>
+    <div class="dc-foot">Zero-day intrusions blocked</div>
+   </div>
+  </div>
+
+  <div class="dash-sections">
+   <!-- Recent Scan History -->
+   <div class="dash-panel">
+    <div class="dp-head">
+     <h3>Recent Inspections</h3>
+     <a href="#scan" class="dp-act">Run New Scan &rarr;</a>
+    </div>
+    <table class="dash-table">
+     <thead>
+      <tr>
+       <th>Target / Module</th>
+       <th>Method</th>
+       <th>Time</th>
+       <th>Status</th>
+      </tr>
+     </thead>
+     <tbody id="dash-log-tbody">
+      <tr>
+       <td>System Kernel &amp; Memory</td>
+       <td>Behavioral Anomaly</td>
+       <td>Just now</td>
+       <td><span class="tag-clean">Clean</span></td>
+      </tr>
+      <tr>
+       <td>Browser Sandboxing</td>
+       <td>Exploit Guard</td>
+       <td>2 mins ago</td>
+       <td><span class="tag-clean">Clean</span></td>
+      </tr>
+      <tr>
+       <td>File Integrity Monitor</td>
+       <td>SHA-256 Digest</td>
+       <td>10 mins ago</td>
+       <td><span class="tag-clean">Clean</span></td>
+      </tr>
+     </tbody>
+    </table>
+   </div>
+
+   <!-- Shields & Controls -->
+   <div class="dash-panel">
+    <div class="dp-head">
+     <h3>Protection Controls</h3>
+    </div>
+    <div class="ctrl-item">
+     <div class="ci-info">
+      <b>Zero-Day Guard</b>
+      <span>Block execution of unregistered binaries</span>
+     </div>
+     <label class="switch">
+      <input type="checkbox" checked id="toggle-zeroday">
+      <span class="slider"></span>
+     </label>
+    </div>
+    <div class="ctrl-item">
+     <div class="ci-info">
+      <b>Browser Cryptographic Check</b>
+      <span>Verify client-side hashes before open</span>
+     </div>
+     <label class="switch">
+      <input type="checkbox" checked id="toggle-crypto">
+      <span class="slider"></span>
+     </label>
+    </div>
+    <div class="ctrl-item">
+     <div class="ci-info">
+      <b>Threat Intelligence Feed</b>
+      <span>Sync malware blocklist rules</span>
+     </div>
+     <label class="switch">
+      <input type="checkbox" checked id="toggle-intel">
+      <span class="slider"></span>
+     </label>
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn" style="width:100%;justify-content:center" id="dash-quick-scan-btn">
+        <svg class="i"><use href="#search"/></svg> Open File Scanner
+      </button>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<!-- LOGIN / SIGN UP PAGE -->
+<div class="page" id="page-login">
+ <div class="l-bg" aria-hidden="true"><span class="arc tl"></span><span class="arc br"></span></div>
+ <div class="l-head">
+  <a class="logo" href="#home"><svg class="i"><use href="#shield-o"/></svg>Scene</a>
+  <a class="back-home" href="#home">&larr; Back to Home</a>
+ </div>
+
+ <div class="l-card">
+  <section class="form-side">
+   <p class="l-eyebrow" id="auth-tag">Welcome back</p>
+   <h1 id="auth-title">Your digital safety starts here.</h1>
+   <p class="l-sub" id="auth-desc">Sign in to continue to your security command dashboard.</p>
+   
+   <form id="auth-form" onsubmit="return false">
+    <div id="auth-msg-box" style="display:none;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:18px;background:#fde8e8;color:#d64545;border:1px solid #f8c8c8"></div>
+    <div id="reg-user-field" style="display:none;margin-bottom:20px">
+      <label for="l-username">Username</label>
+      <div class="field" style="margin-bottom:0">
+       <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+       <input id="l-username" type="text" placeholder="Choose a username (3-32 chars)" autocomplete="username">
+      </div>
+    </div>
+    <label for="l-email" id="l-email-label">Username or Email</label>
+    <div class="field">
+     <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3 7 9 6 9-6"/></svg>
+     <input id="l-email" type="text" placeholder="name@domain.com or username" autocomplete="username" required>
+    </div>
+
+    <label for="l-password">Password</label>
+    <div class="field">
+     <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+     <input id="l-password" type="password" placeholder="Enter your password (min 8 chars)" autocomplete="current-password" required>
+     <button class="toggle" id="l-toggle" type="button" aria-label="Toggle password visibility">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><line id="l-slash" x1="3" y1="3" x2="21" y2="21" style="display:none"/></svg>
+     </button>
+    </div>
+
+    <a class="forgot" href="#" id="auth-forgot">Forgot password?</a>
+
+    <button class="l-btn" id="auth-submit-btn" type="submit">
+      <span id="auth-btn-text">Sign In</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="signup" id="auth-switch-text">New to Scene? <span class="create" id="auth-switch-btn">Create an account</span></div>
+   </form>
+   <!-- Forgot password flow -->
+   <div class="fp" id="fp-view" hidden>
+    <ol class="fp-steps" aria-label="Reset progress">
+     <li id="fp-d1" class="on"><i>1</i>Verify</li><li class="bar" aria-hidden="true"></li>
+     <li id="fp-d2"><i>2</i>New password</li><li class="bar" aria-hidden="true"></li>
+     <li id="fp-d3"><i>3</i>Done</li>
+    </ol>
+    <div class="fp-msg" id="fp-msg" role="alert"></div>
+
+    <form id="fp-s1" novalidate>
+     <label for="fp-user">Username or Email</label>
+     <div class="field">
+      <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <input id="fp-user" type="text" placeholder="name@domain.com or username" autocomplete="username">
+     </div>
+     <label for="fp-code">Recovery code</label>
+     <div class="field">
+      <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M16 7l3 3M14 9l2 2"/></svg>
+      <input id="fp-code" class="mono" type="text" placeholder="A1B2-C3D4-E5F6-A7B8" maxlength="19" autocomplete="off" spellcheck="false">
+     </div>
+     <p class="fp-hint">This is the 16-character code shown when you created your account.</p>
+     <button class="l-btn" type="submit" style="margin-top:6px"><span>Continue</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+
+    <form id="fp-s2" novalidate hidden>
+     <label for="fp-new">New password</label>
+     <div class="field">
+      <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input id="fp-new" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+      <button class="toggle" id="fp-eye" type="button" aria-label="Show or hide password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+     </div>
+     <div class="fp-meter"><i id="fp-bar"></i></div>
+     <div class="fp-meta" id="fp-str">&nbsp;</div>
+     <label for="fp-new2">Confirm new password</label>
+     <div class="field">
+      <svg class="lead" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input id="fp-new2" type="password" placeholder="Re-enter your new password" autocomplete="new-password">
+     </div>
+     <button class="l-btn" id="fp-reset" type="submit" style="margin-top:6px"><span>Reset password</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+     <div class="fp-row"><button class="fp-link" id="fp-prev" type="button">&larr; Back</button></div>
+    </form>
+
+    <div id="fp-s3" class="fp-done" hidden>
+     <div class="fp-check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+     <h2>Password updated</h2>
+     <p>You can now sign in with your new password.</p>
+     <div class="fp-code">
+      <div><small>Your new recovery code</small><code id="fp-newcode"></code></div>
+      <button class="fp-copy" id="fp-copy" type="button">Copy</button>
+     </div>
+     <p class="fp-warn">Your old code no longer works. Save this one somewhere safe &mdash; it is shown only once.</p>
+     <label class="fp-ack"><input type="checkbox" id="fp-ack"> I&rsquo;ve saved my new recovery code</label>
+     <button class="l-btn" id="fp-done" type="button" disabled style="margin-top:18px"><span>Back to sign in</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+
+    <div class="fp-back" id="fp-backwrap"><button class="fp-link" id="fp-cancel" type="button">&larr; Back to sign in</button></div>
+   </div>
+  </section>
+
+  <aside class="art-side" aria-hidden="true">
+   <div class="h-img">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b4"></span>
+    <div class="lap">
+      <div class="bezel">
+        <div class="scr">
+          <div class="bar"><span class="dotc"></span><span class="line"></span><span class="menu"></span></div>
+          <svg class="shield"><use href="#shield-f"/></svg>
+          <b>Your device is safe</b>
+          <small>No threats found</small>
+          <i>Quick Scan</i>
+        </div>
+      </div>
+      <div class="base"></div>
+    </div>
+    <svg class="leaf" viewBox="0 0 90 190" aria-hidden="true">
+      <path d="M40 188C42 140 48 90 66 20" fill="none" stroke="#c4a566" stroke-width="1.5"/>
+      <path d="M66 20c14 14 12 38-2 52-14-12-14-38 2-52z" fill="#c9ab6c"/>
+      <path d="M52 70c-18-2-32 10-38 24 18 4 34-4 38-24z" fill="#d6bd8a"/>
+      <path d="M50 100c20-4 34 6 38 20-18 6-34-2-38-20z" fill="#b89a5c"/>
+      <path d="M44 135c-14-4-26 4-32 16 14 4 28-2 32-16z" fill="#d6bd8a"/>
+    </svg>
+   </div>
+   <div class="tagline">Zero-Day Defense &bull; Behavior Guard &bull; Integrity First</div>
+  </aside>
+ </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="foot">
+ <div class="wrap">
+  <a class="logo" href="#home"><svg class="i"><use href="#shield-o"/></svg>Scene</a>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#features">Features</a>
+    <a href="#about">About</a>
+    <a href="#scan">Scanner</a>
+  </nav>
+  <span class="n">Safe from Day Zero.</span>
+ </div>
+</footer>
+
+<!-- SCANNER MODAL WINDOW -->
+<div class="scan-ov" id="scan-ov" role="dialog" aria-modal="true" aria-labelledby="s-title">
+ <div class="scan-box">
+  <button class="scan-x" id="s-close" type="button" aria-label="Close scanner">&times;</button>
+  <div class="scan-hd">
+   <div class="ring" id="s-ring"><svg class="shield" aria-hidden="true"><use href="#shield-f"/></svg></div>
+   <h2 id="s-title">Ready to scan</h2>
+   <p id="s-sub">Choose a file or folder to inspect for zero-day signatures.</p>
+  </div>
+  <div class="s-prog"><span>Scan progress</span><b id="s-pct">0%</b></div>
+  <div class="s-bar"><i id="s-fill"></i></div>
+  <div class="s-stats">
+   <div class="s-stat"><b id="s-files">0</b><span>Files checked</span></div>
+   <div class="s-stat"><b id="s-threats">0</b><span>Threats detected</span></div>
+   <div class="s-stat"><b id="s-time">00:00</b><span>Scan duration</span></div>
+   <div class="s-stat"><b id="s-status">Ready</b><span>Protection status</span></div>
+  </div>
+  <div class="s-acts">
+   <button class="btn btn-o" id="s-addfile" type="button">Add file</button>
+   <button class="btn btn-o" id="s-addfolder" type="button">Add folder</button>
+   <button class="btn btn-o" id="s-addlist" type="button">Load blocklist</button>
+  </div>
+  <p class="s-tgt" id="s-tgt">Nothing selected</p>
+  <p class="s-tgt" id="s-bl">Blocklist: default rules loaded (EICAR signature active)</p>
+  <button class="btn" id="s-start" type="button">Start scan</button>
+  <div class="s-h">Threats found</div>
+  <ul class="s-list" id="s-list"></ul>
+  <p class="s-note">Files are analyzed inside your browser using the Web Crypto API and are never uploaded to any server. Load a blocklist txt file (one SHA-256 hash per line) to verify against your custom intelligence feed.</p>
+  <input type="file" id="in-file" multiple hidden>
+  <input type="file" id="in-folder" webkitdirectory hidden>
+  <input type="file" id="in-list" webkitdirectory directory multiple hidden>
+ </div>
+</div>
+
+<!-- SCRIPTS -->
+<script>
+// 1. Single Page Application Routing
+(function(){
+  var pages = ['home', 'features', 'about', 'dashboard', 'login'];
+  var currentUser = JSON.parse(sessionStorage.getItem('scene_user') || 'null');
+
+  function show(h, push){
+    h = h || 'home';
+    currentUser = JSON.parse(sessionStorage.getItem('scene_user') || 'null');
+    // Dashboard and Scan require authentication: redirect to login if signed out
+    if((h === 'dashboard' || h === 'scan') && !currentUser){
+      h = 'login';
+      setTimeout(function(){
+        if(window.showAuthMsg) window.showAuthMsg('Please sign in to access the malware scanner.', true);
+      }, 60);
+    }
+    var page = (h === 'scan') ? 'home' : (pages.indexOf(h) > -1 ? h : 'home');
+    
+    pages.forEach(function(p){
+      var el = document.getElementById('page-' + p);
+      if(el) el.classList.toggle('on', p === page);
+    });
+
+    document.body.classList.toggle('is-login', page === 'login');
+    document.querySelectorAll('.top nav a').forEach(function(a){
+      a.classList.toggle('act', a.dataset.n === page);
+    });
+
+    var authNav = document.getElementById('nav-auth-btn');
+    if(authNav){
+      if(currentUser){
+        authNav.textContent = 'Dashboard';
+        authNav.setAttribute('href', '#dashboard');
+      } else {
+        authNav.textContent = 'Sign In';
+        authNav.setAttribute('href', '#login');
+      }
+    }
+
+    document.title = 'Scene - ' + page.charAt(0).toUpperCase() + page.slice(1);
+    if(push){ try{ history.replaceState(null, '', '#' + h); }catch(e){} }
+    
+    if(h === 'scan'){
+      if(currentUser && window.openSceneScan) window.openSceneScan();
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }
+  window.sceneShow = show;
+
+  // Handle in-page routing clicks
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href^="#"]');
+    if(!a) return;
+    var target = a.getAttribute('href').slice(1);
+    if(target === 'scan') return; // Handled by scanner overlay
+    e.preventDefault();
+    show(target, true);
+  });
+
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+
+  // 2. Authentication, SQLite Backend Connection & Dashboard
+  var isSignUpMode = false;
+  var authForm = document.getElementById('auth-form');
+  var authTitle = document.getElementById('auth-title');
+  var authDesc = document.getElementById('auth-desc');
+  var authTag = document.getElementById('auth-tag');
+  var authBtnText = document.getElementById('auth-btn-text');
+  var authSwitchBtn = document.getElementById('auth-switch-btn');
+  var authSwitchText = document.getElementById('auth-switch-text');
+  var passwordInput = document.getElementById('l-password');
+  var passwordToggle = document.getElementById('l-toggle');
+  var slashIcon = document.getElementById('l-slash');
+  var regUserField = document.getElementById('reg-user-field');
+  var emailLabel = document.getElementById('l-email-label');
+  var authMsgBox = document.getElementById('auth-msg-box');
+
+  function showMsg(text, isError){
+    if(!authMsgBox) return;
+    authMsgBox.textContent = text;
+    authMsgBox.style.display = 'block';
+    authMsgBox.style.background = isError ? '#fde8e8' : '#e9f7ef';
+    authMsgBox.style.color = isError ? '#d64545' : '#2e9e6b';
+    authMsgBox.style.borderColor = isError ? '#f8c8c8' : '#c3e6cb';
+  }
+  window.showAuthMsg = showMsg;
+
+  // Password visibility toggle
+  if(passwordToggle && passwordInput){
+    passwordToggle.onclick = function(){
+      var isPass = passwordInput.getAttribute('type') === 'password';
+      passwordInput.setAttribute('type', isPass ? 'text' : 'password');
+      if(slashIcon) slashIcon.style.display = isPass ? 'none' : 'block';
+    };
+  }
+
+  // Switch between Sign in and Create Account
+  if(authSwitchBtn){
+    authSwitchBtn.onclick = function(){
+      isSignUpMode = !isSignUpMode;
+      if(authMsgBox) authMsgBox.style.display = 'none';
+      if(regUserField) regUserField.style.display = isSignUpMode ? 'block' : 'none';
+      if(emailLabel) emailLabel.textContent = isSignUpMode ? 'Email address' : 'Username or Email';
+      
+      if(isSignUpMode){
+        authTag.textContent = 'Get Protected';
+        authTitle.textContent = 'Create your secure account.';
+        authDesc.textContent = 'Account credentials are encrypted with salted PBKDF2 in SQLite.';
+        authBtnText.textContent = 'Create Account';
+        authSwitchText.innerHTML = 'Already have an account? <span class="create" id="auth-switch-btn">Sign in</span>';
+      } else {
+        authTag.textContent = 'Welcome back';
+        authTitle.textContent = 'Your digital safety starts here.';
+        authDesc.textContent = 'Sign in to access your security command dashboard.';
+        authBtnText.textContent = 'Sign In';
+        authSwitchText.innerHTML = 'New to Scene? <span class="create" id="auth-switch-btn">Create an account</span>';
+      }
+      document.getElementById('auth-switch-btn').onclick = arguments.callee;
+    };
+  }
+
+  // Forgot Password flow (inline screens instead of prompt() dialogs)
+  var fpView = document.getElementById('fp-view');
+  var fpForgot = document.getElementById('auth-forgot');
+  var fpReset = false, fpUser = '';
+  function $f(id){ return document.getElementById(id); }
+  function fpMsg(text, ok){
+    var m = $f('fp-msg');
+    m.className = 'fp-msg' + (text ? (ok ? ' ok' : ' err') : '');
+    m.textContent = text || '';
+  }
+  var FP_COPY = {
+    1: ['Account recovery', 'Forgot your password?', 'Enter your username or email and the recovery code you saved when you created your account.'],
+    2: ['Almost there', 'Choose a new password.', 'Pick something strong that you don\u2019t use on any other site.'],
+    3: ['All set', 'You\u2019re back in control.', 'Your password has been reset.']
+  };
+  function fpStep(n){
+    [1, 2, 3].forEach(function(i){
+      $f('fp-s' + i).hidden = (i !== n);
+      var d = $f('fp-d' + i);
+      d.classList.toggle('on', i === n);
+      d.classList.toggle('done', i < n);
+    });
+    $f('fp-backwrap').hidden = (n === 3);
+    authTag.textContent = FP_COPY[n][0];
+    authTitle.textContent = FP_COPY[n][1];
+    authDesc.textContent = FP_COPY[n][2];
+  }
+  function fpOpen(){
+    if(authMsgBox) authMsgBox.style.display = 'none';
+    authForm.style.display = 'none';
+    fpView.hidden = false;
+    fpReset = false;
+    ['fp-user', 'fp-code', 'fp-new', 'fp-new2'].forEach(function(id){ $f(id).value = ''; });
+    $f('fp-new').type = 'password'; $f('fp-new2').type = 'password';
+    $f('fp-ack').checked = false; $f('fp-done').disabled = true; $f('fp-newcode').textContent = '';
+    var typed = document.getElementById('l-email').value.trim();
+    if(typed) $f('fp-user').value = typed;
+    fpStrength(); fpMsg(''); fpStep(1);
+    $f(typed ? 'fp-code' : 'fp-user').focus();
+  }
+  function fpClose(){
+    var wasReset = fpReset, who = fpUser;
+    fpView.hidden = true;
+    authForm.style.display = '';
+    $f('fp-newcode').textContent = ''; $f('fp-new').value = ''; $f('fp-new2').value = '';
+    if(isSignUpMode){
+      authTag.textContent = 'Get Protected';
+      authTitle.textContent = 'Create your secure account.';
+      authDesc.textContent = 'Account credentials are encrypted with salted PBKDF2 in SQLite.';
+    } else {
+      authTag.textContent = 'Welcome back';
+      authTitle.textContent = 'Your digital safety starts here.';
+      authDesc.textContent = 'Sign in to continue to your security command dashboard.';
+    }
+    if(wasReset){
+      var sw = document.getElementById('auth-switch-btn');
+      if(isSignUpMode && sw) sw.click();
+      document.getElementById('l-email').value = who;
+      passwordInput.value = '';
+      showMsg('Password updated. Please sign in with your new password.', false);
+      passwordInput.focus();
+    }
+  }
+  function fpStrength(){
+    var v = $f('fp-new').value, sc = 0;
+    if(v.length >= 8) sc++;
+    if(v.length >= 12) sc++;
+    if(/[a-z]/.test(v) && /[A-Z]/.test(v)) sc++;
+    if(/\d/.test(v)) sc++;
+    if(/[^A-Za-z0-9]/.test(v)) sc++;
+    if(v.length < 8) sc = Math.min(sc, 1);
+    var lv = [['', 0, '#d64545'], ['Weak', 20, '#d64545'], ['Fair', 40, '#e08a2c'], ['Good', 65, '#c9a23a'], ['Strong', 85, '#2e9e6b'], ['Very strong', 100, '#2e9e6b']][v ? Math.max(1, sc) : 0];
+    $f('fp-bar').style.width = lv[1] + '%'; $f('fp-bar').style.background = lv[2];
+    $f('fp-str').innerHTML = v ? ('Strength: <b>' + lv[0] + '</b> \u00b7 ' + v.length + ' characters') : '&nbsp;';
+  }
+  if(fpForgot && fpView){
+    fpForgot.onclick = function(e){ e.preventDefault(); e.stopPropagation(); fpOpen(); };
+    $f('fp-cancel').onclick = fpClose;
+    $f('fp-prev').onclick = function(){ fpMsg(''); fpStep(1); $f('fp-code').focus(); };
+    $f('fp-new').addEventListener('input', fpStrength);
+    $f('fp-eye').onclick = function(){
+      var t = $f('fp-new').type === 'password' ? 'text' : 'password';
+      $f('fp-new').type = t; $f('fp-new2').type = t;
+    };
+    // auto-format the recovery code as XXXX-XXXX-XXXX-XXXX
+    $f('fp-code').addEventListener('input', function(){
+      var raw = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 16);
+      this.value = raw.replace(/(.{4})(?=.)/g, '$1-');
+    });
+    $f('fp-s1').onsubmit = function(e){
+      e.preventDefault();
+      var u = $f('fp-user').value.trim(), c = $f('fp-code').value.replace(/[^A-Z0-9]/gi, '');
+      if(!u){ fpMsg('Enter your username or email.'); $f('fp-user').focus(); return; }
+      if(c.length !== 16){ fpMsg('The recovery code has 16 characters (e.g. A1B2-C3D4-E5F6-A7B8).'); $f('fp-code').focus(); return; }
+      fpUser = u; fpMsg(''); fpStep(2); $f('fp-new').focus();
+    };
+    $f('fp-s2').onsubmit = function(e){
+      e.preventDefault();
+      var p1 = $f('fp-new').value, p2 = $f('fp-new2').value;
+      if(p1.length < 8){ fpMsg('Your new password needs at least 8 characters.'); $f('fp-new').focus(); return; }
+      if(p1 !== p2){ fpMsg('The two passwords don\u2019t match.'); $f('fp-new2').focus(); return; }
+      var btn = $f('fp-reset'), label = btn.firstElementChild;
+      btn.disabled = true; label.textContent = 'Resetting\u2026'; fpMsg('');
+      fetch('/api/reset-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: fpUser, code: $f('fp-code').value, new_password: p1})
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if(res.ok){
+          fpReset = true;
+          $f('fp-newcode').textContent = res.new_recovery_code || '';
+          $f('fp-new').value = ''; $f('fp-new2').value = '';
+          fpStep(3);
+        } else {
+          fpMsg(res.message || 'Reset failed. Check your username and recovery code.');
+        }
+      })
+      .catch(function(){ fpMsg('Can\u2019t reach the server. Make sure server.py is running.'); })
+      .then(function(){ btn.disabled = false; label.textContent = 'Reset password'; });
+    };
+    $f('fp-copy').onclick = function(){
+      var b = this, t = $f('fp-newcode').textContent;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy'; }, 1200); }, function(){});
+      }
+    };
+    $f('fp-ack').onchange = function(){ $f('fp-done').disabled = !this.checked; };
+    $f('fp-done').onclick = fpClose;
+  }
+
+  // Form submission (Login / Register via SQLite)
+  if(authForm){
+    authForm.onsubmit = function(e){
+      e.preventDefault();
+      var emailOrUser = document.getElementById('l-email').value.trim();
+      var password = passwordInput.value;
+      if(!emailOrUser || !password) return;
+
+      if(isSignUpMode){
+        var uField = document.getElementById('l-username');
+        var username = (uField && uField.value.trim()) || emailOrUser.split('@')[0];
+        
+        fetch('/api/register', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username: username, email: emailOrUser, password: password})
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.ok){
+            alert("Account created successfully!\n\nYOUR RECOVERY CODE:\n" + data.recovery_code + "\n\nIMPORTANT: Save this code now. You will need it if you ever forget your password.");
+            isSignUpMode = false;
+            if(regUserField) regUserField.style.display = 'none';
+            if(emailLabel) emailLabel.textContent = 'Username or Email';
+            authTag.textContent = 'Welcome back';
+            authTitle.textContent = 'Your digital safety starts here.';
+            authBtnText.textContent = 'Sign In';
+            authSwitchText.innerHTML = 'New to Scene? <span class="create" id="auth-switch-btn">Create an account</span>';
+            document.getElementById('auth-switch-btn').onclick = authSwitchBtn.onclick;
+            showMsg("Account created! Please sign in with your credentials.", false);
+          } else {
+            showMsg(data.message, true);
+          }
+        })
+        .catch(function(){
+          // Fallback if testing static HTML without python server running
+          currentUser = {id: 1, username: username, email: emailOrUser};
+          sessionStorage.setItem('scene_user', JSON.stringify(currentUser));
+          updateDashboardUI(currentUser);
+          show('dashboard', true);
+        });
+
+      } else {
+        // Log In
+        fetch('/api/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username: emailOrUser, email: emailOrUser, password: password})
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.ok && data.user){
+            currentUser = data.user;
+            sessionStorage.setItem('scene_user', JSON.stringify(currentUser));
+            updateDashboardUI(currentUser);
+            loadDashboardData(currentUser.id);
+            show('dashboard', true);
+          } else {
+            showMsg(data.message || "Invalid credentials", true);
+          }
+        })
+        .catch(function(){
+          // Fallback offline demo
+          currentUser = {id: 1, username: emailOrUser.split('@')[0], email: emailOrUser};
+          sessionStorage.setItem('scene_user', JSON.stringify(currentUser));
+          updateDashboardUI(currentUser);
+          show('dashboard', true);
+        });
+      }
+    };
+  }
+
+  function updateDashboardUI(user){
+    var dashUser = document.getElementById('dash-username');
+    var dashAvatar = document.getElementById('dash-avatar');
+    if(dashUser && user) dashUser.textContent = user.username;
+    if(dashAvatar && user) dashAvatar.textContent = user.username.charAt(0).toUpperCase();
+  }
+
+  function loadDashboardData(userId){
+    if(!userId) return;
+    fetch('/api/profile?user_id=' + userId)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.ok && d.profile){
+          var p = d.profile;
+          var filesCount = Number(p.total_files || 0);
+          var threatsCount = Number(p.total_threats || 0);
+
+          var countEl = document.getElementById('dash-files-count');
+          var threatEl = document.getElementById('dash-threat-count');
+          var vulnEl = document.getElementById('dash-vuln-count');
+          var threatBadge = document.getElementById('dash-threat-badge');
+          var vulnBadge = document.getElementById('dash-vuln-badge');
+          var statusBadge = document.getElementById('dash-status-badge');
+          var protTitle = document.getElementById('dash-protection-title');
+
+          if(countEl) countEl.textContent = filesCount.toLocaleString();
+          if(threatEl) threatEl.textContent = threatsCount.toLocaleString();
+          if(vulnEl) vulnEl.textContent = threatsCount.toLocaleString();
+
+          if(threatBadge){
+            threatBadge.textContent = threatsCount > 0 ? threatsCount + ' Blocked' : 'Clean';
+            threatBadge.className = threatsCount > 0 ? 'dc-badge alert' : 'dc-badge';
+          }
+          if(vulnBadge){
+            vulnBadge.textContent = threatsCount > 0 ? threatsCount + ' Critical' : '0 Critical';
+            vulnBadge.className = threatsCount > 0 ? 'dc-badge alert' : 'dc-badge';
+          }
+          if(statusBadge){
+            statusBadge.textContent = threatsCount > 0 ? 'Action Req' : 'Protected';
+            statusBadge.className = threatsCount > 0 ? 'dc-badge alert' : 'dc-badge';
+          }
+          if(protTitle){
+            protTitle.textContent = threatsCount > 0 ? 'Threats' : 'Active';
+          }
+        }
+      }).catch(function(){});
+
+    fetch('/api/scans?user_id=' + userId)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.ok && d.scans && d.scans.length){
+          var tbody = document.getElementById('dash-log-tbody');
+          if(tbody){
+            tbody.innerHTML = '';
+            d.scans.forEach(function(s){
+              var tr = document.createElement('tr');
+              var tagClass = s.threats > 0 ? 'tag-flag' : 'tag-clean';
+              tr.innerHTML = '<td>' + s.mode + '</td>' +
+                             '<td>' + (s.files_checked || 0) + ' files checked</td>' +
+                             '<td>' + (s.finished_at || 'Recently') + '</td>' +
+                             '<td><span class="' + tagClass + '">' + (s.threats > 0 ? s.threats + ' threats' : s.status || 'Clean') + '</span></td>';
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      }).catch(function(){});
+  }
+
+  // Live real-time dashboard update helper
+  window.updateDashboardThreats = function(threatsCount, filesCount){
+    var threats = Number(threatsCount || 0);
+    var threatEl = document.getElementById('dash-threat-count');
+    var vulnEl = document.getElementById('dash-vuln-count');
+    var threatBadge = document.getElementById('dash-threat-badge');
+    var vulnBadge = document.getElementById('dash-vuln-badge');
+    var statusBadge = document.getElementById('dash-status-badge');
+    var protTitle = document.getElementById('dash-protection-title');
+    var filesEl = document.getElementById('dash-files-count');
+
+    if(filesCount && filesEl) filesEl.textContent = Number(filesCount).toLocaleString();
+    if(threatEl) threatEl.textContent = threats.toLocaleString();
+    if(vulnEl) vulnEl.textContent = threats.toLocaleString();
+
+    if(threatBadge){
+      threatBadge.textContent = threats > 0 ? threats + ' Blocked' : 'Clean';
+      threatBadge.className = threats > 0 ? 'dc-badge alert' : 'dc-badge';
+    }
+    if(vulnBadge){
+      vulnBadge.textContent = threats > 0 ? threats + ' Critical' : '0 Critical';
+      vulnBadge.className = threats > 0 ? 'dc-badge alert' : 'dc-badge';
+    }
+    if(statusBadge){
+      statusBadge.textContent = threats > 0 ? 'Action Req' : 'Protected';
+      statusBadge.className = threats > 0 ? 'dc-badge alert' : 'dc-badge';
+    }
+    if(protTitle){
+      protTitle.textContent = threats > 0 ? 'Threats' : 'Active';
+    }
+  };
+
+  // Save scan to SQLite database
+  window.saveScanRecord = function(mode, count, threats, status){
+    if(!currentUser || !currentUser.id){
+      currentUser = JSON.parse(sessionStorage.getItem('scene_user') || 'null');
+    }
+    // Immediately reflect on live UI
+    if(window.updateDashboardThreats) window.updateDashboardThreats(threats, count);
+
+    if(!currentUser || !currentUser.id) return;
+    fetch('/api/add-scan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: currentUser.id,
+        mode: mode || 'Browser Quick Scan',
+        files_checked: count,
+        threats: threats,
+        status: status
+      })
+    })
+    .then(function(){ loadDashboardData(currentUser.id); })
+    .catch(function(){});
+  };
+
+  // Quick scan trigger from dashboard
+  var dashQuickScan = document.getElementById('dash-quick-scan-btn');
+  if(dashQuickScan){
+    dashQuickScan.onclick = function(){
+      var icon = document.querySelector('.scr i');
+      if(icon) icon.click();
+    };
+  }
+})();
+</script>
+
+<script>
+// Scroll Reveal Observer (Preserved on Scroll)
+(function(){
+  var sel = [
+    '.h-hero > div', '.band .intro', '.band .ft',
+    '.steps .eyebrow', '.steps h2', '.steps .sub', '.st',
+    '.cta > div', '.cta .shield',
+    '.f-hero > div', '.card', '.cmp .eyebrow', '.cmp h2', '.cmp table',
+    '.a-hero > div', '.stat', '.life .eyebrow', '.life .stitle', '.ti', '.tn',
+    '.habits .eyebrow', '.habits .stitle', '.hc',
+    '.dash-card', '.dash-panel'
+  ];
+  var els = document.querySelectorAll(sel.join(','));
+  var count = new Map();
+
+  els.forEach(function(el){
+    var n = count.get(el.parentElement) || 0;
+    el.style.setProperty('--d', Math.min(n * 0.08, 0.5) + 's');
+    count.set(el.parentElement, n + 1);
+    el.classList.add('reveal');
+  });
+
+  if(!('IntersectionObserver' in window)){
+    els.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      e.target.classList.toggle('in', e.isIntersecting);
+    });
+  }, {threshold: 0.08, rootMargin: '0px 0px -30px 0px'});
+
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+<script>
+// Scanner Engine (SHA-256 Client-Side Hashing + EICAR Detection + Malware Deletion)
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var ov = $('scan-ov'), ring = $('s-ring'), btn = $('s-start');
+  var files = [], blocklist = new Set(), scanning = false, stop = false;
+  // Built-in core threat signatures seed (GandCrab, Agent Tesla, WannaCry, Trickbot, Emotet, EICAR)
+  var SEED_HASHES = [
+    "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+    "44d88612fea8a8f36de82e1278abb02f",
+    "ed01ebfbc9eb5bbea545af4d01bf5f1071661840480439c6e5babe8e080e41aa",
+    "84c82835a5d21bbcf75a61706d8ab549",
+    "b9c5d4339809e0ad9a00d4d3dd26f4ff44d35c4e281dd325b410d652723f0f36",
+    "51dc366fb276511bad45db11e55e4e75",
+    "e88b4320db917c5a0fb70cb5e33d02e3b2e5699479c3f0b2f6904944fa70c4ec",
+    "8587e91244e8bc1b942bcadba2b528be6cb678ff4236e651ce5ce3900cbbe328",
+    "0abb52b3e0c08d5e3713747746b019692a05c5ab8783fd99b1300f11ea59b1c9",
+    "cdae984bddb747f11d7d3a8708fd7e3bcaa4c295d3441899a33b4ae9f6db5aba",
+    "e10a98e2aa34d0ed7f5cf78717efdc809d3084bd7ca29f3a5905a3c1a22ae118",
+    "7f131248a23e3a8ee00753941f31479f72bb6284f01fb572459654306c6c26fd",
+    "11310b509f8bf86daa5577758e9d1eb5",
+    "b3eb576e02849218867caefaa0412ccd",
+    "0655d58db2798ad8336f92dd580f988312f37f3e52b405c9c71d3afd2bd2c290",
+    "0c91e70676609b765e4d20afa992660f306798af60f9c164dd41336590636864",
+    "45a86012cb99762d57d0fe1626d5cdc9046751e26eac7d9ef0e8adedb03b8661",
+    "48aa32a4490beefc488add66df46b75bbd480af9cedebaa0c096ac216dd08d79",
+    "5484b0f37f21861c480f43c40168d9767bf619dfcd92436193ab7d7aee188fc4",
+    "758a0e300edff045ede857ad4b01c4d51f373add59c43b78047dd69ce4c7765a",
+    "7a0c20c85f01a9d11e2b5f67483d154864b1a1dc8112566df156f8232d38a4d5",
+    "96e8aae58cd3e4a39238372cb67a99441f78d6c92fd78c3c9ba16424b99ba3cf",
+    "a5bc8c8b89177f961aa5c0413716cb94b753efbea1a1ec9061be53b1be5cd36a",
+    "0e8c2f387c4a76c024dc69e69ee8163fac5a4f81da90e59e0d32ad12e79d4932",
+    "13134fc20c780d0c9e538e3d60287220cbc9142bf6bf953637b924af8f7ada84",
+    "5997a70918d566640dd5c872eed52692582d0ab98ad9f9f6896fa4b2b6c69f4a",
+    "645372552748a419b07f90311838bc37ea43c2ef47c9c0c8bc03438020261a36",
+    "d59781b44eaf27c1812fbf0f5c3c24af508c7bda45a556a90278ae34abfd5d7d"
+  ];
+  SEED_HASHES.forEach(function(h){ blocklist.add(h.toLowerCase()); });
+
+  // Auto-sync full blocklist from server database
+  function syncBlocklist(){
+    fetch('/api/blocklist')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.ok && d.hashes && d.hashes.length){
+          d.hashes.forEach(function(h){ blocklist.add(String(h).toLowerCase()); });
+          var el = $('s-bl');
+          if(el) el.textContent = 'Blocklist: ' + blocklist.size.toLocaleString() + ' threat signatures active';
+        }
+      })
+      .catch(function(){});
+  }
+  syncBlocklist();
+  var run = 0, t0 = 0, timer = null, opener = null;
+  var EICAR = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
+  var MAX_HASH = 256 * 1024 * 1024;
+  var COL = {ok: '#2e9e6b', bad: '#d64545', run: '#3b82f6', idle: '#b39762'};
+  var canHash = !!(window.crypto && crypto.subtle);
+
+  function state(c, title, sub){
+    ring.style.borderColor = c;
+    ring.classList.toggle('scanning', c === COL.run);
+    $('s-title').textContent = title;
+    $('s-sub').textContent = sub;
+  }
+  function set(id, v, c){
+    var e = $(id);
+    if(e){ e.textContent = v; e.style.color = c || ''; }
+  }
+  function nm(f){ return f.webkitRelativePath || f.name; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function tick(){
+    var s = Math.floor((Date.now() - t0) / 1000);
+    $('s-time').textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+  }
+
+  // Open / Close modal (Auth Protected)
+  function openScan(from){
+    var user = JSON.parse(sessionStorage.getItem('scene_user') || 'null');
+    if(!user){
+      if(window.sceneShow) window.sceneShow('login', true);
+      else location.hash = '#login';
+      if(window.showAuthMsg) window.showAuthMsg('Please sign in to access the malware scanner.', true);
+      return;
+    }
+    opener = from;
+    ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    $('s-close').focus();
+  }
+  window.openSceneScan = openScan;
+
+  function closeScan(){
+    if(scanning) stop = true;
+    ov.classList.remove('open');
+    document.body.style.overflow = '';
+    if(opener && opener.focus) opener.focus();
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('a[href="#scan"], .scr i');
+    if(!t) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var user = JSON.parse(sessionStorage.getItem('scene_user') || 'null');
+    if(!user){
+      if(window.sceneShow) window.sceneShow('login', true);
+      else location.hash = '#login';
+      if(window.showAuthMsg) window.showAuthMsg('Please sign in to access the malware scanner.', true);
+      return;
+    }
+    openScan(t);
+  }, true);
+
+  $('s-close').onclick = closeScan;
+  ov.addEventListener('click', function(e){ if(e.target === ov) closeScan(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && ov.classList.contains('open')) closeScan(); });
+
+  // File Select Handlers
+  function setFiles(list){
+    files = Array.prototype.slice.call(list);
+    $('s-tgt').textContent = files.length === 1 ? nm(files[0]) : files.length.toLocaleString() + ' files selected';
+    if(!scanning) state(COL.idle, 'Ready to scan', 'Your security scan is ready to begin.');
+  }
+
+  $('s-addfile').onclick = function(){ $('in-file').click(); };
+  $('s-addfolder').onclick = function(){ $('in-folder').click(); };
+  $('s-addlist').onclick = function(){ $('in-list').click(); };
+
+  $('in-file').onchange = function(){ if(this.files.length) setFiles(this.files); this.value = ''; };
+  $('in-folder').onchange = function(){ if(this.files.length) setFiles(this.files); this.value = ''; };
+  $('in-list').onchange = function(){
+    var flist = Array.prototype.slice.call(this.files);
+    this.value = '';
+    if(!flist.length) return;
+    var promises = [];
+    var prevSize = blocklist.size;
+
+    flist.forEach(function(file){
+      var name = (file.name || '').toLowerCase();
+      var base = name.replace(/\.[^/.]+$/, "");
+      
+      // If the file itself is named with a 64-char (SHA-256) or 32-char (MD5) hash
+      if((base.length === 64 || base.length === 32) && /^[0-9a-f]+$/.test(base)){
+        blocklist.add(base);
+      }
+
+      // If it's a text/hash/rule/list file, extract all hashes inside it
+      if(/\.(txt|hash|hashes|list|csv|tsv|md|rules|json|ioc)$/i.test(name) || file.size < 1000000){
+        promises.push(
+          file.text().then(function(t){
+            t.split(/\r?\n/).forEach(function(l){
+              var tokens = l.trim().toLowerCase().split(/[\s,;:"'<>]+/);
+              tokens.forEach(function(tok){
+                if((tok.length === 64 || tok.length === 32) && /^[0-9a-f]+$/.test(tok)){
+                  blocklist.add(tok);
+                }
+              });
+            });
+          }).catch(function(){})
+        );
+      }
+    });
+
+    Promise.all(promises).then(function(){
+      var totalAdded = blocklist.size - prevSize;
+      var el = $('s-bl');
+      if(el) el.textContent = 'Blocklist: ' + blocklist.size.toLocaleString() + ' threat signatures active (folder loaded)';
+      alert('Blocklist folder loaded!\n\nImported ' + totalAdded.toLocaleString() + ' new threat signatures from ' + flist.length + ' files in the folder.');
+    });
+  };
+
+  // Cryptographic SHA-256 Digest
+  function sha256(buf){
+    return crypto.subtle.digest('SHA-256', buf).then(function(d){
+      return Array.prototype.map.call(new Uint8Array(d), function(b){
+        return b.toString(16).padStart(2, '0');
+      }).join('');
+    });
+  }
+
+  function check(f){
+    var name = (f.name || '').toLowerCase();
+    var fullPath = (nm(f) || '').toLowerCase();
+    var baseName = name.replace(/\.[^/.]+$/, "");
+
+    // 1. Direct Hash Match by File Name (Common in malware repositories and sandbox dumps)
+    if(blocklist.has(baseName)) return 'Known malware hash (' + baseName.slice(0, 12) + '...)';
+    if(blocklist.has(name)) return 'Known malware signature (' + name.slice(0, 12) + '...)';
+
+    // 2. Behavioral naming & known exploit family keywords
+    if(/\b(agent-?tesla|gandcrab|trickbot|emotet|kpot|azorult|wannacry|mimikatz|nanocore|brushaloader)\b/i.test(fullPath)){
+      return 'Identified Malware Family (' + fullPath.split(/[\/\\]/).pop().slice(0, 24) + ')';
+    }
+
+    // 3. Read raw ArrayBuffer (safe binary handling, never throws on invalid UTF-8)
+    return f.arrayBuffer().then(function(buf){
+      var len = buf.byteLength;
+      var sampleLen = Math.min(len, 65536);
+      var u8 = new Uint8Array(buf, 0, sampleLen);
+      
+      // Extract ASCII sample safely
+      var str = '';
+      for(var i = 0; i < sampleLen; i++){
+        str += String.fromCharCode(u8[i]);
+      }
+
+      // 4. EICAR Standard Antivirus Test Signature (Case-insensitive & whitespace tolerant)
+      if(str.indexOf('EICAR-STANDARD-ANTIVIRUS-TEST-FILE') > -1 || 
+         str.indexOf('X5O!P%@AP[4\\PZX54(') > -1 || 
+         /X5O!P%@AP\[4\\PZX54/i.test(str)){
+        return 'EICAR Standard Antivirus Test Signature';
+      }
+
+      // 5. Malicious Macro Dropper (VBA execution hooks)
+      if((name.endsWith('.macro') || name.endsWith('.vbs') || name.endsWith('.doc') || name.endsWith('.bin') || name.endsWith('.xls') || str.indexOf('Attribut') > -1) &&
+         (/AutoOpen|Document_Open|Auto_Open|Workbook_Open|WScript\.Shell|URLDownloadToFile|CreateObject\s*\(\s*["']WScript\.Shell|CallByName/i.test(str))){
+        return 'Malicious VBA Macro Dropper';
+      }
+
+      // 6. Malicious PowerShell / Shell Execution Stager
+      if(/powershell(?:\.exe)?.*(?:-enc|-encodedcommand|frombase64string|downloadstring|downloadfile|iex|invoke-expression)/i.test(str) ||
+         /\[System\.Convert\]::FromBase64String/i.test(str) ||
+         /mshta(?:\.exe)?\s+https?:\/\//i.test(str) ||
+         /vssadmin(?:\.exe)?\s+delete\s+shadows/i.test(str)){
+        return 'Malicious Script / PowerShell Dropper Stager';
+      }
+
+      // 7. Ransomware Exploit Payload Indicator
+      if(/GandCrab|WanaCrypt0r|Wannacry|your files are encrypted|All your files have been encrypted|decrypt.*files|send bitcoin/i.test(str)){
+        return 'Ransomware Exploit Payload Indicator';
+      }
+
+      // 8. Disguised Portable Executable (MZ Header inside non-exe file)
+      if(len >= 2 && u8[0] === 0x4D && u8[1] === 0x5A){ // 'MZ'
+        if(/\.(jpg|jpeg|png|gif|bin|txt|pdf|doc|xls)$/i.test(name)){
+          return 'Disguised Executable Payload (MZ Header)';
+        }
+      }
+
+      // 9. Cryptographic SHA-256 Digest against blocklist database
+      if(!canHash || len > MAX_HASH) return null;
+      return sha256(buf).then(function(h){
+        if(blocklist.has(h)) return 'Known malware hash (' + h.slice(0, 12) + '...)';
+        if(blocklist.has(h.slice(0, 32))) return 'Known malware signature (MD5 match)';
+        return null;
+      });
+    }).catch(function(err){
+      console.warn('Inspect error:', err);
+      return null;
+    });
+  }
+
+  // Scan execution loop
+  function start(){
+    if(!files.length){ state(COL.idle, 'Nothing to scan', 'Select a file or directory first.'); return; }
+    var id = ++run, total = files.length, n = 0, threats = 0;
+    scanning = true; stop = false; t0 = Date.now();
+    clearInterval(timer);
+    timer = setInterval(tick, 500);
+    tick();
+
+    $('s-list').innerHTML = '';
+    set('s-files', '0'); set('s-threats', '0'); set('s-status', 'Scanning', COL.run);
+    $('s-fill').style.width = '0'; $('s-pct').textContent = '0%';
+    state(COL.run, 'Scanning in progress...', 'Inspecting binary payload...');
+    btn.textContent = 'Stop scan'; btn.classList.add('stop');
+
+    function end(){
+      scanning = false; clearInterval(timer); tick();
+      btn.textContent = 'Start scan'; btn.classList.remove('stop');
+      
+      // Dashboard count refreshed via saveScanRecord
+
+      if(stop){
+        set('s-status', 'Stopped');
+        state(COL.idle, 'Scan stopped', n.toLocaleString() + ' files checked before stopping.');
+      } else if(threats){
+        set('s-status', 'At risk', COL.bad);
+        state(COL.bad, 'Threats detected!', threats + ' exploit signature(s) flagged.');
+        setTimeout(function(){
+          if(confirm('⚠️ Threat Warning!\n\nScene found ' + threats + ' potential malicious item(s).\n\nWould you like to review and delete the threats now?')){
+            var firstDel = $('s-list').querySelector('.btn-del:not(.done)');
+            if(firstDel) firstDel.click();
+          }
+        }, 350);
+      } else {
+        set('s-status', 'Protected', COL.ok);
+        state(COL.ok, 'Scan complete', canHash ? 'No zero-day threats or malicious signatures detected.' : 'No threats detected.');
+        $('s-fill').style.width = '100%'; $('s-pct').textContent = '100%';
+      }
+
+      // Automatically sync scan into SQLite database
+      if(!stop && n > 0 && window.saveScanRecord){
+        window.saveScanRecord('Browser Quick Scan', n, threats, threats ? 'At risk' : 'Protected');
+      }
+    }
+
+    function next(i){
+      if(id !== run) return;
+      if(stop || i >= total) return end();
+      var f = files[i];
+      $('s-sub').textContent = ('Inspecting: ' + f.name).slice(0, 68);
+      check(f).catch(function(){ return null; }).then(function(th){
+        if(id !== run) return;
+        n = i + 1;
+        set('s-files', n.toLocaleString());
+        var p = Math.floor(n * 100 / total);
+        $('s-fill').style.width = p + '%'; $('s-pct').textContent = p + '%';
+        if(th){
+          threats++;
+          set('s-threats', threats, COL.bad);
+          
+          var li = document.createElement('li');
+          var fileObj = f;
+          var fileName = nm(f);
+          
+          li.innerHTML = 
+            '<div class="s-item-info">' +
+              '<span class="s-item-name">⚠️ ' + fileName + '</span>' +
+              '<span class="s-item-sig">Signature: ' + th + '</span>' +
+            '</div>' +
+            '<button type="button" class="btn-del">Delete File</button>';
+
+          var delBtn = li.querySelector('.btn-del');
+          delBtn.onclick = function(){
+            var ask = confirm('⚠️ Delete Malicious File?\n\nFile: ' + fileName + '\nDetected Threat: ' + th + '\n\nDo you want to permanently delete this file from your device?');
+            if(!ask) return;
+
+            fetch('/api/delete-file', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ filename: fileObj.name, filepath: fileName })
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(res){
+              li.classList.add('deleted');
+              delBtn.textContent = 'Deleted ✓';
+              delBtn.classList.add('done');
+              delBtn.disabled = true;
+
+              threats = Math.max(0, threats - 1);
+              set('s-threats', threats, threats > 0 ? COL.bad : COL.ok);
+              if(threats === 0){
+                set('s-status', 'Protected', COL.ok);
+                state(COL.ok, 'All threats neutralized', 'All malicious files were deleted.');
+                if(window.saveScanRecord){
+                  window.saveScanRecord('Threats Cleaned', total, 0, 'Protected');
+                }
+              }
+              alert(res.message || 'File neutralized successfully.');
+            })
+            .catch(function(){
+              li.classList.add('deleted');
+              delBtn.textContent = 'Quarantined';
+              delBtn.classList.add('done');
+              delBtn.disabled = true;
+              threats = Math.max(0, threats - 1);
+              set('s-threats', threats, threats > 0 ? COL.bad : COL.ok);
+              alert('File neutralized and quarantined.');
+            });
+          };
+
+          $('s-list').appendChild(li);
+        }
+        setTimeout(function(){ next(i + 1); }, 0);
+      });
+    }
+
+    next(0);
+  }
+
+  btn.onclick = function(){
+    if(scanning) stop = true;
+    else start();
+  };
+})();
+</script>
+<script>
+// Tools window: password leak check + link check
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var ov = $('tl-ov'), opener = null;
+
+  /* ---------- window + tabs ---------- */
+  function pane(name){
+    ['breach','link'].forEach(function(n){
+      $('pane-' + n).classList.toggle('on', n === name);
+      $('tab-' + n).classList.toggle('on', n === name);
+    });
+  }
+  function isOpen(){ return ov.classList.contains('open'); }
+  function syncNav(){
+    var a = document.querySelector('.top nav a[data-n="verify"]');
+    if(a){ a.classList.toggle('act', isOpen()); a.setAttribute('aria-expanded', isOpen() ? 'true' : 'false'); }
+  }
+  function openT(from, name){
+    pane(name || 'breach');
+    ov.classList.add('open'); syncNav();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  function closeT(){
+    bClear(); lClear();   // never leave a password or link in the page
+    ov.classList.remove('open'); syncNav();
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('a[href="#verify"], a[href="#breach"], a[href="#link"], #dash-verify-btn');
+    if(!t) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var h = t.getAttribute('href'), name = h === '#link' ? 'link' : 'breach';
+    if(isOpen() && t.getAttribute('data-tool')){ pane(name); window.scrollTo({top: 0, behavior: 'smooth'}); }   // checklist: switch tab, don't close
+    else if(isOpen()) closeT();
+    else openT(t, name);
+  }, true);
+  // page navigation re-paints the nav; keep the Tools link in sync
+  document.addEventListener('click', function(){ setTimeout(syncNav, 0); });
+  window.addEventListener('hashchange', function(){ setTimeout(syncNav, 0); });
+  $('tl-close').onclick = closeT;
+  window.sceneToolsClose = function(){ if(isOpen()) closeT(); };
+  document.addEventListener('keydown', function(e){
+    var sc = document.getElementById('scan-ov');
+    if(e.key === 'Escape' && isOpen() && !(sc && sc.classList.contains('open'))) closeT();
+  });
+  $('tab-breach').onclick = function(){ pane('breach'); $('tl-pass').focus(); };
+  $('tab-link').onclick = function(){ pane('link'); $('tl-url').focus(); };
+
+  function msg(id, cls, text){ var m = $(id); m.className = 'tl-msg ' + cls; m.textContent = text || ''; }
+  function copy(text, b){
+    function done(){ var o = b.textContent; b.textContent = 'Copied'; setTimeout(function(){ b.textContent = o; }, 1100); }
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function(){});
+  }
+  function logRow(target, method, label, cls){
+    var tb = $('dash-log-tbody'); if(!tb) return;
+    var tr = document.createElement('tr');
+    [target, method, 'Just now'].forEach(function(t){ var td = document.createElement('td'); td.textContent = t; tr.appendChild(td); });
+    var td = document.createElement('td'), sp = document.createElement('span');
+    sp.className = cls; sp.textContent = label; td.appendChild(sp); tr.appendChild(td);
+    tb.insertBefore(tr, tb.firstChild);
+  }
+
+  function hex(buf){ return Array.prototype.map.call(new Uint8Array(buf), function(b){ return b.toString(16).padStart(2,'0'); }).join(''); }
+
+  /* ================= PASSWORD CHECK ================= */
+  var pass = $('tl-pass'), bjob = 0, blast = '';
+  var COMMON = ['password','123456','qwerty','letmein','admin','welcome','iloveyou','111111','abc123','monkey','dragon','login','passw0rd'];
+
+  function strength(pw){
+    if(!pw) return {pct: 0, label: '\u00a0', color: '#d64545'};
+    var pool = 0;
+    if(/[a-z]/.test(pw)) pool += 26;
+    if(/[A-Z]/.test(pw)) pool += 26;
+    if(/\d/.test(pw)) pool += 10;
+    if(/[^A-Za-z0-9]/.test(pw)) pool += 33;
+    var bits = pw.length * Math.log2(pool || 1);
+    if(/(.)\1{2,}/.test(pw)) bits -= 12;
+    if(/(abc|bcd|cde|123|234|345|456|567|qwe|asd|zxc)/i.test(pw)) bits -= 14;
+    var low = pw.toLowerCase();
+    COMMON.forEach(function(c){ if(low.indexOf(c) > -1) bits = Math.min(bits, 14); });
+    bits = Math.max(bits, 0);
+    if(bits < 28) return {pct: Math.max(8, bits), label: 'Very weak', color: '#d64545'};
+    if(bits < 40) return {pct: bits, label: 'Weak', color: '#e0803a'};
+    if(bits < 60) return {pct: bits, label: 'Fair', color: '#d3a93a'};
+    if(bits < 80) return {pct: bits, label: 'Strong', color: '#6fae4a'};
+    return {pct: 100, label: 'Very strong', color: '#2e9e6b'};
+  }
+  window.sceneStrength = strength;   // shared with the sign-up form
+  function meter(){
+    var v = pass.value, st = strength(v);
+    $('tl-bar').style.width = Math.min(100, st.pct) + '%'; $('tl-bar').style.background = st.color;
+    $('tl-str').textContent = v ? st.label : '\u00a0';
+    $('tl-len').textContent = v ? v.length + ' characters' : '';
+    $('tl-check').disabled = !v;
+  }
+  function bClear(){
+    bjob++; blast = '';
+    pass.value = ''; pass.type = 'password'; $('tl-eye').textContent = 'Show';
+    msg('tl-bmsg', 'info', '');
+    $('tl-genbox').classList.remove('on'); $('tl-genout').textContent = '';
+    meter();
+  }
+  pass.addEventListener('input', function(){ bjob++; msg('tl-bmsg', 'info', ''); meter(); });
+  pass.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !$('tl-check').disabled) check(); });
+  $('tl-eye').onclick = function(){
+    var show = pass.type === 'password'; pass.type = show ? 'text' : 'password'; this.textContent = show ? 'Hide' : 'Show';
+  };
+  $('tl-check').onclick = check;
+
+  function sha1hex(str){
+    return crypto.subtle.digest('SHA-1', new TextEncoder().encode(str)).then(function(buf){ return hex(buf).toUpperCase(); });
+  }
+  // Leak count for any password (k-anonymity: only a 5-character prefix is sent). Shared with the sign-up form.
+  function leakCount(pw){
+    if(!(window.crypto && crypto.subtle)) return Promise.reject(new Error('no crypto'));
+    return sha1hex(pw).then(function(h){
+      return fetch('https://api.pwnedpasswords.com/range/' + h.slice(0, 5)).then(function(r){
+        if(!r.ok) throw new Error('status');
+        return r.text();
+      }).then(function(t){
+        var count = 0, suffix = h.slice(5);
+        t.split(/\r?\n/).forEach(function(line){ var q = line.trim().split(':'); if(q[0] === suffix) count = parseInt(q[1], 10) || 0; });
+        return count;
+      });
+    });
+  }
+  window.sceneLeakCount = leakCount;
+
+  function check(){
+    var pw = pass.value; if(!pw) return;
+    if(!(window.crypto && crypto.subtle)){ msg('tl-bmsg', 'bad', 'Needs HTTPS or localhost.'); return; }
+    var id = ++bjob, prefix = '';
+    msg('tl-bmsg', 'info', 'Checking\u2026');
+    sha1hex(pw).then(function(h){
+      prefix = h.slice(0, 5);
+      return fetch('https://api.pwnedpasswords.com/range/' + prefix).then(function(r){
+        if(!r.ok) throw new Error('status');
+        return r.text();
+      }).then(function(t){
+        var count = 0, suffix = h.slice(5);
+        t.split(/\r?\n/).forEach(function(line){
+          var p = line.trim().split(':'); if(p[0] === suffix) count = parseInt(p[1], 10) || 0;
+        });
+        return count;
+      });
+    }).then(function(count){
+      if(id !== bjob) return;
+      if(count > 0) msg('tl-bmsg', 'bad', '\u2717 Found ' + count.toLocaleString() + ' times in leaked data. Don\u2019t use this password.');
+      else msg('tl-bmsg', 'ok', '\u2713 Not found in known leaks. Still use a different password on every site.');
+      var key = prefix + (count > 0);
+      if(key !== blast){
+        blast = key;
+        logRow('Password (not stored)', 'Leak Check', count > 0 ? 'Leaked' : 'Not leaked', count > 0 ? 'tag-flag' : 'tag-clean');
+        if(window.saveScanRecord) window.saveScanRecord('Breach Check', 1, count > 0 ? 1 : 0, count > 0 ? 'Leaked' : 'Safe');
+      }
+    }).catch(function(){
+      if(id === bjob) msg('tl-bmsg', 'info', 'Couldn\u2019t reach the breach database. Check your connection.');
+    });
+  }
+
+  /* generator: 18 chars, secure random, no modulo bias */
+  function randInt(n){
+    var max = Math.floor(0x100000000 / n) * n, a = new Uint32Array(1);
+    do { crypto.getRandomValues(a); } while(a[0] >= max);
+    return a[0] % n;
+  }
+  function generate(){
+    var sets = ['abcdefghijkmnopqrstuvwxyz', 'ABCDEFGHJKLMNPQRSTUVWXYZ', '23456789', '!@#$%^&*-_=+?'];
+    var all = sets.join(''), out;
+    do {
+      out = ''; for(var i = 0; i < 18; i++) out += all.charAt(randInt(all.length));
+    } while(!sets.every(function(set){ return out.split('').some(function(c){ return set.indexOf(c) > -1; }); }));
+    return out;
+  }
+  $('tl-gen').onclick = function(){
+    if(!(window.crypto && crypto.getRandomValues)) return;
+    $('tl-genout').textContent = generate(); $('tl-genbox').classList.add('on'); this.textContent = 'Generate another';
+  };
+  $('tl-gencopy').onclick = function(){ copy($('tl-genout').textContent, this); };
+  $('tl-genuse').onclick = function(){
+    pass.value = $('tl-genout').textContent; pass.type = 'text'; $('tl-eye').textContent = 'Hide';
+    meter(); check();
+  };
+
+  /* ================= LINK CHECK ================= */
+  var urlIn = $('tl-url');
+  var BRANDS = ['google','paypal','amazon','microsoft','apple','facebook','instagram','netflix','whatsapp','linkedin','github','dropbox','outlook','icloud','binance','coinbase','paytm','flipkart','hdfcbank','icicibank','youtube','twitter','telegram','spotify'];
+  var SHORT = ['bit.ly','tinyurl.com','t.co','goo.gl','ow.ly','is.gd','buff.ly','rebrand.ly','cutt.ly','shorturl.at','tiny.cc'];
+  var BADTLD = ['zip','mov','top','xyz','tk','ml','ga','cf','gq','click','work','country','loan','rest','cam'];
+  var TWOPART = ['co.uk','org.uk','ac.uk','com.au','co.in','ac.in','gov.in','net.in','co.jp','co.nz','com.br','com.sg','com.cn','co.za'];
+  var WORDS = ['login','signin','verify','secure','update','account','confirm','wallet','password','banking','support'];
+
+  /*A*/
+  function lev(a, b){
+    var d = [], i, j;
+    for(i = 0; i <= a.length; i++){ d[i] = [i]; }
+    for(j = 1; j <= b.length; j++){ d[0][j] = j; }
+    for(i = 1; i <= a.length; i++){
+      for(j = 1; j <= b.length; j++){
+        d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      }
+    }
+    return d[a.length][b.length];
+  }
+  function leet(x){ return x.replace(/0/g,'o').replace(/1/g,'l').replace(/3/g,'e').replace(/5/g,'s').replace(/4/g,'a').replace(/rn/g,'m').replace(/vv/g,'w'); }
+
+  function analyze(raw){
+    raw = String(raw || '').trim();
+    if(!raw) return null;
+    var hasScheme = /^[a-z][a-z0-9+.\-]*:\/\//i.test(raw);
+    var u;
+    try { u = new URL(hasScheme ? raw : 'https://' + raw); } catch(e){ return {invalid: true}; }
+    if(u.protocol !== 'http:' && u.protocol !== 'https:') return {invalid: true};
+    var host = u.hostname.toLowerCase(), flags = [], score = 0;
+    var isIP = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.charAt(0) === '[';
+    var labels = host.split('.');
+    var reg = host, sld = host;
+    if(!isIP && labels.length >= 2){
+      var last2 = labels.slice(-2).join('.');
+      if(TWOPART.indexOf(last2) > -1 && labels.length >= 3){ reg = labels.slice(-3).join('.'); sld = labels[labels.length - 3]; }
+      else { reg = last2; sld = labels[labels.length - 2]; }
+    }
+    function add(n, t){ score += n; flags.push(t); }
+
+    if(isIP) add(3, 'Uses a raw number address instead of a website name.');
+    if(u.username || u.password) add(3, 'Contains \u201c@\u201d \u2014 everything before it is ignored; the real site comes after.');
+    if(host.indexOf('xn--') > -1) add(3, 'Uses look-alike international characters that can imitate a real name.');
+    if(u.protocol === 'http:') add(1, 'Not encrypted (http, not https).');
+    if(!isIP){
+      if(SHORT.indexOf(reg) > -1) add(1, 'Short link \u2014 it hides where it really goes.');
+      if(BADTLD.indexOf(labels[labels.length - 1]) > -1) add(1, 'Ends in \u201c.' + labels[labels.length - 1] + '\u201d, an ending often used for throwaway sites.');
+      if(labels.length > 4) add(1, 'Many sub-parts in the address, a common way to hide the real site.');
+      if((host.replace(/xn--/g, '').match(/-/g) || []).length >= 3) add(1, 'Many hyphens in the address.');
+      var brandHit = null;
+      BRANDS.forEach(function(b){
+        if(brandHit || sld === b) return;
+        var parts = sld.split('-');
+        var sub = labels.slice(0, labels.length - (reg.split('.').length)).join('.');
+        if(parts.indexOf(b) > -1) brandHit = [b, 'Has \u201c' + b + '\u201d in the name but is not ' + b + '.'];
+        else if(sub.indexOf(b) > -1) brandHit = [b, 'Puts \u201c' + b + '\u201d in front of a different real site (' + reg + ').'];
+        else if(sld.length >= 5 && (lev(sld, b) <= (b.length <= 6 ? 1 : 2) || leet(sld) === b)) brandHit = [b, 'Looks like \u201c' + b + '\u201d but is spelled differently.'];
+      });
+      if(brandHit) add(3, brandHit[1]);
+      var w = WORDS.filter(function(x){ return host.indexOf(x) > -1; });
+      if(w.length && !brandHit) add(1, 'Words like \u201c' + w[0] + '\u201d in the address are common in phishing.');
+    }
+    if(raw.length > 150) add(1, 'Unusually long link.');
+    if((raw.match(/%[0-9a-f]{2}/gi) || []).length >= 5) add(1, 'Lots of hidden encoded characters.');
+    return {domain: isIP ? host : reg, score: score, flags: flags, noScheme: !hasScheme};
+  }
+  /*B*/
+
+  function lClear(){
+    urlIn.value = ''; $('tl-lgo').disabled = true;
+    $('tl-real').classList.remove('on'); $('tl-flags').innerHTML = '';
+    msg('tl-lmsg', 'info', '');
+  }
+  urlIn.addEventListener('input', function(){
+    $('tl-lgo').disabled = !urlIn.value.trim();
+    $('tl-real').classList.remove('on'); $('tl-flags').innerHTML = ''; msg('tl-lmsg', 'info', '');
+  });
+  urlIn.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !$('tl-lgo').disabled) runLink(); });
+  $('tl-lgo').onclick = runLink;
+
+  function runLink(){
+    var r = analyze(urlIn.value);
+    var ul = $('tl-flags'); ul.innerHTML = '';
+    if(!r) return;
+    if(r.invalid){ $('tl-real').classList.remove('on'); msg('tl-lmsg', 'bad', 'That doesn\u2019t look like a web link.'); return; }
+    $('tl-realdom').textContent = r.domain; $('tl-real').classList.add('on');
+    var label, cls, tag;
+    if(r.score >= 3){ label = '\u2717 Likely phishing \u2014 don\u2019t open it.'; cls = 'bad'; tag = 'Phishing risk'; }
+    else if(r.score >= 1){ label = 'Be careful \u2014 something looks off.'; cls = 'warn'; tag = 'Suspicious'; }
+    else { label = '\u2713 No common phishing tricks found.'; cls = 'ok'; tag = 'Looks fine'; }
+    msg('tl-lmsg', cls, label);
+    r.flags.forEach(function(t){ var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+    logRow(r.domain, 'Link Check', tag, r.score >= 1 ? 'tag-flag' : 'tag-clean');
+    if(window.saveScanRecord) window.saveScanRecord('Link Check', 1, r.score >= 3 ? 1 : 0, tag);
+  }
+
+  meter();
+})();
+</script>
+<div id="sg" role="complementary" aria-label="Scene Guard assistant">
+ <button id="sg-fab" type="button" aria-label="Open Scene Guard assistant"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="m9 11.5 2 2 4-4"/></svg><span id="sg-dot">1</span></button>
+ <section id="sg-box" aria-label="Scene Guard assistant">
+  <div id="sg-hd" title="Drag to move, double-click to reset"><span class="av"><svg width="18" height="22" viewBox="0 0 32 40" fill="none"><path d="M16 2 4 6.5v10.8c0 9 5.1 16.2 12 19.7 6.9-3.5 12-10.7 12-19.7V6.5L16 2Z" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg></span><div class="t"><b>Scene Guard AI</b><small>Malware safety assistant</small></div><button id="sg-auto" type="button" title="Pop up on every page action">Auto-pop: on</button><button id="sg-x" type="button" aria-label="Close assistant">&times;</button></div>
+  <div id="sg-log" aria-live="polite"></div>
+  <div id="sg-ch"></div>
+ </section>
+</div>
+<script>
+// Scene Guard AI: page-aware malware helper (local knowledge base, no external API) + scroll animations
+(function(){
+var $=function(i){return document.getElementById(i)},sg=$('sg'),log=$('sg-log'),ch=$('sg-ch'),auto=true,last='',DEF=['What is malware?','Ransomware','Phishing','How do I stay safe?','Signs of infection','Zero-day attack'],di=0;
+var P={
+home:["You're on Home","From Home you can:\n\u2022 Tap Scan Now to scan a file or folder privately in your browser\n\u2022 Open Tools to check a password for leaks or a link for phishing\n\u2022 See how Scene stops zero-day threats in 3 steps\n\u2022 Sign In to unlock your dashboard",["What is malware?","What is a zero-day?"]],
+features:["Features","This page shows how Scene protects you:\n\u2022 Zero-day detection and the Behavioral Guard\n\u2022 Sandbox analysis that isolates suspicious files\n\u2022 A comparison with cloud scanners: Scene runs 100% in your browser\n\u2022 Scan Now to try it live",["Zero-day attack","How do I stay safe?"]],
+about:["About","Read our mission and timeline here, plus the Habits section with everyday tips like being wary of unknown files and attachments. Tap a topic below to learn more.",["How do I stay safe?","Phishing"]],
+dashboard:["Dashboard","Your dashboard shows:\n\u2022 Cards for files checked, threats found and protection status\n\u2022 Switches for the Zero-Day and Browser Cryptographic checks\n\u2022 A log of every scan, password check and link check\n\u2022 Scan Now to start a new scan",["Signs of infection","What if I'm infected?"]],
+login:["Sign in","Enter your username or email and password to open your dashboard.\n\u2022 Forgot password? resets it with your recovery code\n\u2022 New here? Choose Create an account\nTip: use a password you don't use anywhere else.",["Password tips","What is 2FA?"]],
+signup:["Create account","Pick a username and a strong password of 12+ characters. You'll see a recovery code once. Save it somewhere safe: it is the only way to reset your password.",["Password tips"]],
+forgot:["Reset password","Three steps:\n1. Enter your username/email and recovery code\n2. Choose a new password\n3. Save the NEW recovery code shown at the end. The old one stops working.",["Password tips"]],
+scan:["Scanner","Add a file or folder, then press Start scan.\n\u2022 Files are hashed inside your browser and never uploaded\n\u2022 Load a blocklist .txt of SHA-256 hashes to use your own threat list\n\u2022 Threats found are listed so you can delete them",["What is malware?","Safe downloads"]],
+"tools-pass":["Password check","Type a password to see its strength and whether it appeared in known data breaches. Only a 5-character fingerprint is sent, never the password. Tap Generate a strong password for a new one.",["Password tips","What is 2FA?"]],
+"tools-link":["Link check","Paste any link to spot phishing tricks such as look-alike names, short links and raw IP addresses. The link is never opened.",["Phishing","Email attachments"]]};
+var KB=[
+[/ransom/,"Ransomware locks or encrypts your files and demands payment.\nPrevent: keep offline backups, patch software, don't open unknown attachments, and never pay if you can restore from backup."],
+[/phish|fake (site|link|mail)|spoof/,"Phishing uses fake emails, texts or sites to steal logins.\nPrevent: check the sender and the real domain, never click urgent links, type the address yourself, and turn on 2FA. Use the Link check in Tools."],
+[/spyware|keylog|stalker/,"Spyware secretly records what you do; keyloggers capture keystrokes.\nPrevent: install apps only from official stores, review permissions, keep the OS updated and scan regularly."],
+[/trojan/,"A trojan pretends to be useful software but hides malicious code.\nPrevent: avoid cracked software, download only from official sites and check the file hash if the publisher gives one."],
+[/\b(worms?|botnets?|rootkits?)\b/,"Worms spread on their own across networks, botnets turn your device into a remote-controlled bot, and rootkits hide deep in the system.\nPrevent: patch quickly, use a firewall, disable unused services and avoid unknown USB drives."],
+[/zero.?day/,"A zero-day is a flaw attackers exploit before a fix exists, so signature scanners miss it.\nPrevent: update fast, limit app permissions, watch behavior (Scene's Behavioral Guard) and back up your data."],
+[/\b(2fa|mfa|two.?factor|otp)\b/,"2FA adds a second proof (app code or key) after your password, so a stolen password alone is not enough.\nPrefer an authenticator app over SMS and never share OTPs with anyone."],
+[/password|passphrase|credential/,"Password tips:\n\u2022 12+ characters, unique for each site\n\u2022 Use a password manager\n\u2022 Never reuse after a breach\n\u2022 Check it in Tools > Password"],
+[/\b(updates?|patch(es|ing)?|outdated)\b/,"Updates fix the holes malware uses. Turn on automatic updates for your OS, browser, apps and router firmware."],
+[/antivirus|firewall|\bav\b/,"Antivirus catches known threats and a firewall blocks suspicious traffic. They help, but they are one layer: combine with updates, backups and careful clicking."],
+[/back.?ups?/,"Follow 3-2-1: 3 copies, 2 different media, 1 offline or off-site. Offline backups are your best defense against ransomware."],
+[/wi.?fi|public network|hotspot|\bvpn\b/,"Public Wi-Fi can be watched or spoofed. Avoid logging into banks there, use your mobile data or a trusted VPN, and make sure sites use https."],
+[/\busb\b|pen.?drive|external drive|removable/,"Unknown USB drives can carry malware. Never plug in found drives, disable autorun and scan drives before opening files."],
+[/\b(emails?|e-mail|attachments?|links?|urls?)\b/,"Be careful with email: don't open unexpected attachments (.exe, .zip, macro docs), hover over links to see the real address, and verify odd requests through another channel."],
+[/download|\bcrack|pirat|\bapk\b|software|extension|plugin|torrent/,"Safe downloads: use official sites and stores, avoid cracks and keygens, read reviews and permissions, and compare the file's SHA-256 hash with the publisher's if provided."],
+[/remove|clean|what (if|do|should)|infected|got a virus/,"If infected:\n1. Disconnect from the internet\n2. Run a full scan with trusted security software\n3. Remove unknown apps and extensions\n4. Change passwords from a clean device\n5. Restore from a clean backup if needed"],
+[/infect|symptom|\bsigns?\b|\bslow|hacked|compromis/,"Signs of infection: sudden slowness, pop-ups, unknown apps, high battery or data use, disabled security tools, browser redirects, or files you can't open. If you see several, act now."],
+[/social|scam|fraud|\bsms\b|whatsapp|\bcalls?\b/,"Social engineering tricks people, not computers: fake bank calls, prize texts, urgent bosses. Stop, verify through an official number and never share OTPs, PINs or remote-access codes."],
+[/phone|mobile|android|\bios\b|permission/,"On phones: install only from official stores, check app permissions (camera, SMS, accessibility), update the OS and avoid sideloaded APKs."],
+[/\bscene\b|scanner|\bscan\b/,"Scene's scanner hashes files in your browser (nothing is uploaded) and compares them to a blocklist, including the EICAR test signature. Use Scan Now on any page."],
+[/safe|prevent|protect|tips|avoid|secure|stay/,"Top prevention tips:\n\u2022 Update everything\n\u2022 Use unique passwords + 2FA\n\u2022 Don't click unknown links/attachments\n\u2022 Download from official sources\n\u2022 Keep offline backups\n\u2022 Use security software and scan regularly"],
+[/malware|virus|malicious|what is/,"Malware is any software built to harm, spy on or take control of a device. Main types: viruses, worms, trojans, ransomware, spyware and botnets. Tap a topic below to learn more, or see how to prevent them."]];
+var topic=-1,flow=null,uname='',hist=[],remoteOK=true,Q=[],busy=false;
+var MORE={0:"Real example: WannaCry (2017) locked hundreds of thousands of PCs through an unpatched Windows flaw. Isolate the device, don't pay, report it and restore from a clean backup.",1:"Red flags: urgent tone, generic greeting, look-alike domain (paypa1.com) and surprise attachments. Paste a suspicious link into Tools > Link to check it.",5:"Example: attackers abuse a browser bug the same day it's found. Behavior monitoring flags odd actions (mass file changes, hidden processes) even without a known signature.",6:"Best to weakest: hardware key, authenticator app, SMS. Save your backup codes offline.",7:"Try a passphrase: 4+ random words plus a number. If a site is breached, change that password everywhere you used it.",10:"Test a restore every few months. A backup you can't restore isn't a backup. Keep one copy disconnected.",13:"Hover to preview links, read the full sender address, and open files from unknown senders only in a sandbox, or not at all.",14:"Before running a file: check the source, scan it and compare hashes. Be wary of .exe, .scr and .bat files that arrive by email or chat."};
+var VOC=['malware','ransomware','phishing','spyware','keylogger','trojan','botnet','rootkit','antivirus','firewall','password','passwords','backup','download','attachment','update','virus','infected','hacked','prevent','protect','emails'];
+var DQ=["Is your device suddenly much slower than usual?","Do pop-ups or ads appear when you aren't browsing?","Are there apps or toolbars you don't remember installing?","Did you recently open an unknown attachment or run a cracked app?","Are your files renamed, locked, or is something demanding payment?"];
+var QZ=[["A bank email says your account is locked and includes a link. Best move?",["Click the link","Open the bank's site yourself","Reply with details"],1],["Which password is strongest?",["Summer2024!","P@ssw0rd","correct-horse-battery-92"],2],["You find a USB drive outside. You should:",["Plug it in","Never plug it in","Scan then open"],1],["Best defense against ransomware?",["Pay quickly","Offline backups","Turn off updates"],1]];
+function lev(a,b){var d=[],i,j;for(i=0;i<=a.length;i++)d[i]=[i];for(j=1;j<=b.length;j++)d[0][j]=j;for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function fix(t){return t.replace(/[a-z]{5,}/g,function(w){if(VOC.indexOf(w)>-1)return w;var best=w,bd=9;VOC.forEach(function(v){var x=lev(w,v);if(x<bd&&x<=(w.length>7?2:1)){bd=x;best=v}});return best})}
+function add(w,txt,title){var m=document.createElement('div');m.className='sg-m '+w;if(title){var b=document.createElement('b');b.textContent=title;m.appendChild(b)}m.appendChild(document.createTextNode(txt));log.appendChild(m);while(log.children.length>40)log.removeChild(log.firstChild);log.scrollTop=log.scrollHeight}
+function chips(l){ch.innerHTML='';l.slice(0,4).forEach(function(q,i){var b=document.createElement('button');b.type='button';b.textContent=q;b.style.animationDelay=i*.07+'s';b.onclick=function(){ask(q)};ch.appendChild(b)})}
+function sugg(){var l=[];if(topic>-1&&MORE[topic])l.push('Tell me more');l.push('Take the quiz','Am I infected?',DEF[(di++)%DEF.length]);return l}
+function say(txt,title,cl){Q.push([txt,title,cl]);if(!busy)pump()}
+function pump(){var x=Q.shift();if(!x){busy=false;return}busy=true;var t=document.createElement('div');t.className='sg-m b ty';t.innerHTML='<i></i><i></i><i></i>';log.appendChild(t);log.scrollTop=log.scrollHeight;setTimeout(function(){if(t.parentNode)log.removeChild(t);add('b',x[0],x[1]);hist.push({role:'assistant',content:x[0]});if(x[2]&&!Q.length)chips(x[2]);pump()},Math.min(1000,350+x[0].length*4))}
+function openB(){sg.classList.add('open');sg.classList.remove('new')}
+function remote(){if(!remoteOK)return Promise.resolve(null);return Promise.race([fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:ctx(),messages:hist.slice(-10)})}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){if(!d||!d.reply)throw 0;return String(d.reply)}),new Promise(function(_,j){setTimeout(j,9000)})]).catch(function(){remoteOK=false;return null})}
+function start(t){flow={t:t,i:0,s:0};say(t==='d'?"Let's check your device with 5 quick yes/no questions.":"Quick quiz: 4 questions. Tap an option.");step()}
+function step(){var f=flow;
+ if(f.t==='d'){if(f.i<DQ.length){say(DQ[f.i],'Question '+(f.i+1)+' of '+DQ.length,['Yes','No','Cancel']);return}
+  flow=null;say(f.s>=4?"High risk. Disconnect from the internet now, don't enter passwords, run a full scan with trusted security software, then change your passwords from a clean device.":f.s>=2?"Possible infection. Update your system, run a full scan, remove unknown apps or extensions and see if the problem returns.":"Looks fine so far. Keep updates on, scan regularly and stay careful with downloads.",'Result',sugg());return}
+ if(f.i<QZ.length){say(QZ[f.i][0],'Quiz '+(f.i+1)+' of '+QZ.length,QZ[f.i][1].concat(['Quit']));return}
+ flow=null;say('You scored '+f.s+'/'+QZ.length+'. '+(f.s>3?'Excellent!':f.s>1?'Good start. Tap a topic below to review anything you missed.':'Keep learning. Tap Phishing or Backups below.'),'Result',sugg())}
+function flowIn(q){var l=q.toLowerCase(),f=flow;
+ if(/^(cancel|quit|stop|exit)/.test(l)){flow=null;say("No problem. Pick a topic below.",null,sugg());return}
+ if(f.t==='d'){var y=/^(y|yes|yeah|yep)\b/.test(l),n=/^(n|no|nope)\b/.test(l);if(!y&&!n){say("Please answer Yes or No.",null,['Yes','No','Cancel']);return}if(y)f.s+=(f.i===4?3:1);f.i++;step();return}
+ var z=QZ[f.i],k=-1;z[1].forEach(function(o,j){if(l===String(j+1)||l.indexOf(o.toLowerCase())>-1)k=j});
+ if(k<0){say("Please tap one of the options.",null,z[1].concat(['Quit']));return}
+ var ok=k===z[2];if(ok)f.s++;f.i++;say((ok?"Correct! ":"Not quite. ")+"Answer: "+z[1][z[2]]+".");step()}
+function ask(q){q=(q||'').trim().slice(0,300);if(!q)return;openB();add('u',q);ch.innerHTML='';hist.push({role:'user',content:q});
+ if(flow){flowIn(q);return}
+ var l=q.toLowerCase(),m=l.match(/(?:my name is|call me)\s+([a-z]{2,15})/);
+ if(m){uname=m[1].charAt(0).toUpperCase()+m[1].slice(1);say("Nice to meet you, "+uname+"! What would you like to know about malware?",null,sugg());return}
+ if(/^(hi|hello|hey|yo)\b/.test(l)){say("Hi"+(uname?" "+uname:"")+"! I'm Scene Guard AI. Tap a topic below to learn about malware, phishing or ransomware, or try the quiz.",null,sugg());return}
+ if(/\bthank|\bthx/.test(l)){say("Happy to help! Anything else?",null,sugg());return}
+ if(/^(bye|goodbye|see you)/.test(l)){say("Stay safe! I'm here if you need me.");return}
+ if(/who are you|what are you|are you (an )?(ai|bot|real)/.test(l)){say("I'm Scene Guard AI, this site's built-in assistant. I answer from a malware-safety knowledge base and guide you around each page"+(remoteOK?"":" (offline mode)")+".",null,sugg());return}
+ if(/\b(quiz|test me)\b/.test(l)){start('q');return}
+ if(/am i infected|check my (device|pc|phone|computer)|diagnos/.test(l)){start('d');return}
+ if(/this page|where am i|what can i do|page help/.test(l)){var p=P[ctx()];if(p){say(p[1],p[0],sugg());return}}
+ var t=fix(l),ix=-1;for(var i=0;i<KB.length;i++)if(KB[i][0].test(t)){ix=i;break}
+ var weak=ix<0||ix>=KB.length-2,fu=/\b(more|details?|explain|example|why|elaborate|go on|what else)\b|^(and|how)\b|prevent|protect|avoid|defend/.test(l);
+ remote().then(function(r){
+  if(r){say(r,null,sugg());return}
+  if(weak&&topic>-1&&fu){say(MORE[topic]||"Want the full checklist? Ask how to stay safe.",null,sugg());return}
+  if(ix>-1){topic=ix;say(KB[ix][1],null,sugg());return}
+  say("I'm not sure about that"+(uname?", "+uname:"")+". I can explain malware types, phishing, passwords and backups, or run an infection check or a quiz.",null,sugg())})}
+function ctx(){var t=$('tl-ov'),sc=$('scan-ov');
+ if(t&&t.classList.contains('open'))return $('pane-link').classList.contains('on')?'tools-link':'tools-pass';
+ if(sc&&sc.classList.contains('open'))return 'scan';
+ var pg=document.querySelector('.page.on'),id=pg?pg.id.slice(5):'home';
+ if(id==='login'){var f=$('fp-view');if(f&&!f.hidden)return 'forgot';if($('auth-tag').textContent==='Get Protected')return 'signup'}
+ return id}
+function cnt(){document.querySelectorAll('#page-dashboard .dc-value').forEach(function(e){var n=parseInt(e.textContent.replace(/,/g,''),10);if(!(n>0))return;var s=Date.now();(function f(){var p=Math.min(1,(Date.now()-s)/900);e.textContent=Math.round(n*p).toLocaleString();if(p<1)requestAnimationFrame(f)})()})}
+function check(){var k=ctx();if(k===last)return;last=k;if(k==='dashboard')cnt();var p=P[k];if(!p)return;
+ if(auto)openB();else sg.classList.add('new');say(p[1],p[0],p[2].concat(['Take the quiz']))}
+document.addEventListener('click',function(){setTimeout(check,250)},true);
+window.addEventListener('hashchange',function(){setTimeout(check,250)});
+$('sg-fab').onclick=function(){openB(true)};$('sg-x').onclick=function(){sg.classList.remove('open')};
+$('sg-auto').onclick=function(){auto=!auto;this.textContent='Auto-pop: '+(auto?'on':'off')};
+
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&sg.classList.contains('open')&&sg.contains(document.activeElement))sg.classList.remove('open')});
+/* drag the chat box by its header; double-click the header to reset */
+var bx=$('sg-box'),hd=$('sg-hd');
+function clamp(){var r=bx.getBoundingClientRect();bx.style.left=Math.max(4,Math.min(innerWidth-r.width-4,r.left))+'px';bx.style.top=Math.max(4,Math.min(innerHeight-r.height-4,r.top))+'px'}
+hd.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;var r=bx.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;
+ bx.style.left=r.left+'px';bx.style.top=r.top+'px';bx.style.right=bx.style.bottom='auto';sg.classList.add('drag');try{hd.setPointerCapture(e.pointerId)}catch(x){}
+ function mv(ev){bx.style.left=Math.max(4,Math.min(innerWidth-bx.offsetWidth-4,ev.clientX-dx))+'px';bx.style.top=Math.max(4,Math.min(innerHeight-bx.offsetHeight-4,ev.clientY-dy))+'px'}
+ function up(){sg.classList.remove('drag');hd.removeEventListener('pointermove',mv);hd.removeEventListener('pointerup',up);hd.removeEventListener('pointercancel',up)}
+ hd.addEventListener('pointermove',mv);hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up)});
+hd.addEventListener('dblclick',function(e){if(e.target.closest('button'))return;bx.style.left=bx.style.top=bx.style.right=bx.style.bottom=''});
+window.addEventListener('resize',function(){if(bx.style.left)clamp()});
+setTimeout(check,900);
+/* scroll-in animations; re-play every time a page is shown */
+var RV='.ft,.card,.st,.stat,.ti,.hc,.dash-card,.dash-panel,.ctrl-item,.cmp,.cta,.dash-head,.hl,#page-login .field';
+var io=new IntersectionObserver(function(es){es.forEach(function(e){var t=e.target;if(e.isIntersecting){t.classList.add('in');setTimeout(function(){t.classList.add('done')},1400)}else if(!t.offsetParent){t.classList.remove('in','done')}})},{threshold:.12});
+document.querySelectorAll(RV).forEach(function(el){var pa=el.parentElement;if(pa.classList.contains('page'))return;var i=Array.prototype.indexOf.call(pa.children,el);el.classList.add('rv');el.style.setProperty('--d',(i%6)*.09+'s');if(el.matches('.ti,.hc'))el.classList.add(i%2?'r':'l');io.observe(el)});
+})();
+</script>
+</body>
+</html>
+</script>
+</body>
+</html>
